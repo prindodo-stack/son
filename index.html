@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI코딩 교실 신청 시스템</title>
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- XLSX Library for Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
+        .step-active { color: #2563eb; border-bottom: 3px solid #2563eb; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .day-cell { min-height: 80px; transition: all 0.2s; }
+        .day-cell:hover:not(.empty, .disabled) { background-color: #eff6ff; }
+        .selected-date { background-color: #2563eb !important; color: white !important; }
+        .blocked { background-color: #fee2e2; color: #ef4444; cursor: not-allowed; }
+        .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 100; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="loading" class="loading-overlay flex flex-col">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p class="mt-4 font-semibold text-blue-600">처리 중...</p>
+    </div>
+
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden relative">
+        <!-- Admin Access -->
+        <button onclick="toggleAdmin()" class="absolute top-4 right-4 text-gray-300 hover:text-gray-500 text-xs">Admin</button>
+
+        <!-- Header -->
+        <div class="bg-blue-600 p-8 text-white text-center">
+            <h1 id="mainTitle" class="text-2xl md:text-3xl font-bold mb-2">AI코딩 교실 신청</h1>
+            <p id="subTitle" class="opacity-90">전라남도교육청창의융합교육원</p>
+        </div>
+
+        <!-- Navigation Steps -->
+        <div id="userNav" class="flex border-b text-center font-semibold text-gray-500">
+            <div id="step1Tab" class="flex-1 py-4 step-active">1. 정보 입력</div>
+            <div id="step2Tab" class="flex-1 py-4">2. 일정 선택</div>
+            <div id="step3Tab" class="flex-1 py-4">3. 신청 완료</div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="p-6 md:p-10">
+            
+            <!-- Step 1: Info Form -->
+            <div id="step1" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">소속 학교명</label>
+                        <input type="text" id="schoolName" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 무지개초등학교">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">직위</label>
+                        <input type="text" id="position" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="예: 교사">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">신청자 성함</label>
+                        <input type="text" id="userName" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="실명을 입력하세요">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">연락처</label>
+                        <input type="text" id="phone" oninput="autoHyphen(this)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="010-0000-0000">
+                    </div>
+                </div>
+                <button onclick="goToStep2()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition">다음 단계로</button>
+            </div>
+
+            <!-- Step 2: Calendar & Slot -->
+            <div id="step2" class="hidden space-y-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">교육 희망일 선택 (1순위 필수)</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="changeMonth(-1)" class="p-2 border rounded">&lt;</button>
+                        <span id="calendarTitle" class="font-bold py-2">2026년 2월</span>
+                        <button onclick="changeMonth(1)" class="p-2 border rounded">&gt;</button>
+                    </div>
+                </div>
+                
+                <div class="calendar-grid text-center font-bold text-xs text-gray-500 mb-2">
+                    <div class="text-red-500">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="text-blue-500">토</div>
+                </div>
+                <div id="calendarBody" class="calendar-grid border-t border-l"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <p class="text-sm font-bold mb-2">선택한 날짜: <span id="selectedDateText" class="text-blue-600">-</span></p>
+                        <label class="block text-sm font-medium mb-1">희망 시간</label>
+                        <select id="timeSlot" class="w-full p-2 border rounded">
+                            <option value="오전(4시간)">오전 (4시간)</option>
+                            <option value="종일(6시간)">종일 (6시간)</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col justify-end">
+                        <button onclick="submitApplication()" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition">신청 완료하기</button>
+                        <button onclick="backToStep1()" class="mt-2 text-gray-500 text-sm underline text-center">이전으로</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div id="step3" class="hidden text-center py-10 space-y-4">
+                <div class="text-6xl text-green-500">✓</div>
+                <h2 class="text-2xl font-bold">신청이 완료되었습니다!</h2>
+                <p class="text-gray-600">입력하신 연락처로 추후 안내 문자를 발송해 드립니다.</p>
+                <button onclick="location.reload()" class="inline-block px-8 py-3 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300">처음으로 돌아가기</button>
+            </div>
+
+            <!-- Admin Panel -->
+            <div id="adminPanel" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-red-600">관리자 모드</h2>
+                    <button onclick="location.reload()" class="text-sm text-gray-500">나가기</button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="exportToExcel()" class="bg-green-100 text-green-700 p-4 rounded-lg font-bold border border-green-200">신청현황 엑셀 다운로드</button>
+                    <div class="col-span-2 p-4 border rounded-lg">
+                        <label class="block text-sm font-bold mb-2">신청 마감 관리</label>
+                        <div class="flex items-center space-x-4">
+                            <span id="appStatusLabel" class="text-sm font-medium">현재: 모집 중</span>
+                            <button onclick="toggleForceClose()" class="bg-gray-800 text-white px-4 py-2 rounded">강제 마감/해제</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border rounded-lg overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-3">학교</th><th class="p-3">이름</th><th class="p-3">연락처</th><th class="p-3">희망일</th><th class="p-3">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminDataTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Supabase 설정
+        const SUPABASE_URL = "https://zyuybhszykxuafzriksn.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_3h3_2LRYgdyeXdoDO6XZMA_4jQrQTtV";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 상태 변수
+        let config = null;
+        let blockedDates = [];
+        let allApplications = [];
+        let currentYear, currentMonth;
+        let selectedDate = null;
+        let adminMode = false;
+
+        // 초기 로드
+        window.onload = async () => {
+            showLoading(true);
+            await loadConfig();
+            await loadBlockedDates();
+            
+            const now = new Date();
+            currentYear = now.getFullYear();
+            currentMonth = now.getMonth();
+            
+            renderCalendar();
+            showLoading(false);
+            
+            checkAppPeriod();
+        };
+
+        async function loadConfig() {
+            const { data, error } = await _supabase.from('config').select('*').single();
+            if (data) {
+                config = data;
+                document.getElementById('mainTitle').innerText = config.main_title;
+                document.getElementById('subTitle').innerText = config.sub_title;
+            }
+        }
+
+        async function loadBlockedDates() {
+            const { data } = await _supabase.from('blocked_dates').select('block_date');
+            if (data) blockedDates = data.map(d => d.block_date);
+        }
+
+        function checkAppPeriod() {
+            const now = new Date();
+            const start = new Date(config.app_start_time);
+            const end = new Date(config.app_end_time);
+
+            if (config.is_force_closed) return lockSystem("관리자에 의해 신청이 마감되었습니다.");
+            if (now < start) return lockSystem(`신청 기간이 아닙니다.<br>(신청 시작: ${config.app_start_time.replace('T',' ')})`);
+            if (now > end) return lockSystem("신청 기간이 종료되었습니다.");
+        }
+
+        function lockSystem(msg) {
+            document.getElementById('step1').innerHTML = `<div class="p-10 text-center text-red-500 font-bold">${msg}</div>`;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+
+        // --- 달력 로직 ---
+        function renderCalendar() {
+            const body = document.getElementById('calendarBody');
+            const title = document.getElementById('calendarTitle');
+            body.innerHTML = '';
+            title.innerText = `${currentYear}년 ${currentMonth + 1}월`;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            // 빈 칸
+            for (let i = 0; i < firstDay; i++) {
+                const div = document.createElement('div');
+                div.className = 'day-cell empty border-b border-r bg-gray-50';
+                body.appendChild(div);
+            }
+
+            // 날짜 칸
+            for (let d = 1; d <= lastDate; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const div = document.createElement('div');
+                div.className = 'day-cell border-b border-r p-1 text-sm cursor-pointer flex flex-col justify-between';
+                
+                const dayNum = document.createElement('span');
+                dayNum.innerText = d;
+                div.appendChild(dayNum);
+
+                // 상태 체크
+                const isBlocked = blockedDates.includes(dateStr);
+                const eduStart = new Date(config.edu_start_date);
+                const eduEnd = new Date(config.edu_end_date);
+                const curDate = new Date(dateStr);
+                const isOutOfRange = curDate < eduStart || curDate > eduEnd;
+                const isWeekend = div.className.includes('day-cell') && (new Date(dateStr).getDay() === 0 || new Date(dateStr).getDay() === 6);
+
+                if (isBlocked || isOutOfRange || isWeekend) {
+                    div.classList.add('blocked');
+                } else {
+                    div.onclick = () => selectDate(dateStr, div);
+                }
+
+                if (selectedDate === dateStr) div.classList.add('selected-date');
+
+                body.appendChild(div);
+            }
+        }
+
+        function changeMonth(val) {
+            currentMonth += val;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            renderCalendar();
+        }
+
+        function selectDate(date, el) {
+            selectedDate = date;
+            document.getElementById('selectedDateText').innerText = date;
+            renderCalendar();
+        }
+
+        // --- 신청 로직 ---
+        function goToStep2() {
+            if (!document.getElementById('schoolName').value || !document.getElementById('userName').value || !document.getElementById('phone').value) {
+                return alert("기본 정보를 모두 입력해주세요.");
+            }
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            document.getElementById('step1Tab').classList.remove('step-active');
+            document.getElementById('step2Tab').classList.add('step-active');
+        }
+
+        function backToStep1() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2Tab').classList.remove('step-active');
+            document.getElementById('step1Tab').classList.add('step-active');
+        }
+
+        async function submitApplication() {
+            if (!selectedDate) return alert("날짜를 선택해주세요.");
+            
+            showLoading(true);
+            const choice = `${selectedDate} (${document.getElementById('timeSlot').value})`;
+
+            const { error } = await _supabase.from('applications').insert([{
+                school_name: document.getElementById('schoolName').value,
+                position: document.getElementById('position').value,
+                user_name: document.getElementById('userName').value,
+                phone: document.getElementById('phone').value,
+                first_choice: choice
+            }]);
+
+            showLoading(false);
+            if (error) {
+                alert("오류가 발생했습니다: " + error.message);
+            } else {
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step3').classList.remove('hidden');
+                document.getElementById('step2Tab').classList.remove('step-active');
+                document.getElementById('step3Tab').classList.add('step-active');
+            }
+        }
+
+        // --- 관리자 로직 ---
+        async function toggleAdmin() {
+            const pass = prompt("관리자 비밀번호를 입력하세요.");
+            if (pass === "1416") {
+                adminMode = true;
+                document.getElementById('userNav').classList.add('hidden');
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+                await loadAdminData();
+            } else if (pass) {
+                alert("비밀번호가 틀렸습니다.");
+            }
+        }
+
+        async function loadAdminData() {
+            showLoading(true);
+            const { data } = await _supabase.from('applications').select('*').order('created_at', { ascending: false });
+            allApplications = data || [];
+            
+            const tbody = document.getElementById('adminDataTable');
+            tbody.innerHTML = '';
+            
+            allApplications.forEach(app => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-3">${app.school_name}</td>
+                    <td class="p-3 font-bold">${app.user_name}</td>
+                    <td class="p-3">${app.phone}</td>
+                    <td class="p-3 text-xs">${app.first_choice}</td>
+                    <td class="p-3"><button onclick="deleteApp(${app.id})" class="text-red-500 underline">삭제</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('appStatusLabel').innerText = config.is_force_closed ? "현재: 강제 마감됨" : "현재: 모집 중";
+            showLoading(false);
+        }
+
+        async function deleteApp(id) {
+            if (!confirm("정말 삭제하시겠습니까?")) return;
+            await _supabase.from('applications').delete().eq('id', id);
+            loadAdminData();
+        }
+
+        async function toggleForceClose() {
+            const newState = !config.is_force_closed;
+            const { error } = await _supabase.from('config').update({ is_force_closed: newState }).eq('id', 1);
+            if (!error) {
+                config.is_force_closed = newState;
+                loadAdminData();
+            }
+        }
+
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(allApplications);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "신청현황");
+            XLSX.writeFile(wb, `신청현황_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function autoHyphen(target) {
+            target.value = target.value.replace(/[^0-9]/g, '').replace(/^(\d{2,3})(\d{3,4})(\d{4})$/, `$1-$2-$3`);
+        }
+    </script>
+</body>
+</html>
