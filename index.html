@@ -49,7 +49,7 @@
             <!-- STEP 1: 일정 선택 -->
             <div id="step1" class="space-y-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-800">교육 희망일 선택 <span class="text-sm font-normal text-gray-500 ml-2">(1, 2순위를 차례로 선택)</span></h3>
+                    <h3 class="text-lg font-bold text-gray-800">교육 희망일 선택 <span class="text-sm font-normal text-gray-500 ml-2">(1, 2순위 모두 선택 필수)</span></h3>
                     <div class="flex space-x-2">
                         <button onclick="changeMonth(-1)" class="p-2 border rounded hover:bg-gray-100">&lt;</button>
                         <span id="calendarTitle" class="font-bold py-2 min-w-[100px] text-center"></span>
@@ -64,11 +64,11 @@
                 <div class="grid grid-cols-2 gap-4 mt-6">
                     <div class="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
                         <label class="block text-xs font-bold text-blue-800 mb-1">1순위 희망일</label>
-                        <div id="firstChoiceText" class="p-2 bg-white border rounded-lg font-bold text-blue-600 text-sm">- 선택 -</div>
+                        <div id="firstChoiceText" class="p-2 bg-white border rounded-lg font-bold text-blue-600 text-sm">- 선택 필수 -</div>
                     </div>
                     <div class="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
                         <label class="block text-xs font-bold text-blue-400 mb-1">2순위 희망일</label>
-                        <div id="secondChoiceText" class="p-2 bg-white border rounded-lg font-bold text-blue-400 text-sm">- 선택 -</div>
+                        <div id="secondChoiceText" class="p-2 bg-white border rounded-lg font-bold text-blue-400 text-sm">- 선택 필수 -</div>
                     </div>
                 </div>
                 <button onclick="goToStep2()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg">다음 단계로 (정보 입력)</button>
@@ -122,11 +122,16 @@
                         </div>
                     </div>
                     <div><label class="block text-sm font-semibold text-gray-700 mb-1">소속 학교명</label><input type="text" id="schoolName" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 무지개초등학교"></div>
-                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">직위</label><input type="text" id="position" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 교사"></div>
                     <div><label class="block text-sm font-semibold text-gray-700 mb-1">신청자 성함</label><input type="text" id="userName" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="실명을 입력하세요"></div>
                     <div><label class="block text-sm font-semibold text-gray-700 mb-1">연락처</label><input type="text" id="phone" oninput="autoHyphen(this)" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="010-0000-0000"></div>
+                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">직위</label><input type="text" id="position" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 교사"></div>
+                    
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">학생수(명)</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">참석교사 수(명)</label>
+                        <input type="number" id="teacherCount" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="숫자만 입력">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">참여 학생수(명)</label>
                         <input type="number" id="studentCount" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="숫자만 입력">
                     </div>
                 </div>
@@ -203,7 +208,7 @@
                                     <th class="p-3">연락처</th>
                                     <th class="p-3">희망일(1순위)</th>
                                     <th class="p-3">희망일(2순위)</th>
-                                    <th class="p-3">학생수</th>
+                                    <th class="p-3">교사/학생</th>
                                     <th class="p-3">차량정보</th>
                                     <th class="p-3">관리</th>
                                 </tr>
@@ -274,20 +279,21 @@
         let currentYear, currentMonth;
         let firstChoice = null, secondChoice = null;
 
-        // 서울 시간을 기준으로 Date 객체를 생성하거나 해석하는 헬퍼 함수
-        function getKSTDate(dateInput) {
-            if (!dateInput) return new Date();
-            const date = new Date(dateInput);
-            // 만약 타임존 오프셋이 없는 문자열(ISO 포맷이 아닌 경우)이 들어오면 현지 시간으로 처리됨
-            return date;
-        }
-
         window.onload = async () => {
             showLoading(true);
-            const now = new Date();
-            currentYear = now.getFullYear();
-            currentMonth = now.getMonth();
             await loadInitialData();
+            
+            // 1. 신청 시작일 기준으로 초기 달력 세팅
+            if (config && config.app_start_time) {
+                const startDate = new Date(config.app_start_time);
+                currentYear = startDate.getFullYear();
+                currentMonth = startDate.getMonth();
+            } else {
+                const now = new Date();
+                currentYear = now.getFullYear();
+                currentMonth = now.getMonth();
+            }
+
             renderCalendar();
             checkAppPeriod();
             showLoading(false);
@@ -342,8 +348,8 @@
         }
 
         function updateChoiceDisplay() {
-            document.getElementById('firstChoiceText').innerText = firstChoice || '- 선택 -';
-            document.getElementById('secondChoiceText').innerText = secondChoice || '- 선택 -';
+            document.getElementById('firstChoiceText').innerText = firstChoice || '- 선택 필수 -';
+            document.getElementById('secondChoiceText').innerText = secondChoice || '- 선택 필수 -';
         }
 
         function renderCalendar() {
@@ -417,23 +423,22 @@
 
         function checkAppPeriod() {
             if(!config) return;
-            const now = new Date(); // 브라우저 시간 (서울 시간)
+            const now = new Date();
             if(config.is_force_closed) return lock("관리자에 의해 마감되었습니다.");
-            
-            // DB의 시간을 서울 시간으로 명확히 해석하도록 함
             if(config.app_start_time && now < new Date(config.app_start_time)) return lock("신청 기간이 아닙니다.");
             if(config.app_end_time && now > new Date(config.app_end_time)) return lock("신청이 종료되었습니다.");
         }
         function lock(m) { document.getElementById('step1').innerHTML = `<div class="p-16 text-center text-red-500 font-bold bg-red-50 border rounded-xl">${m}</div>`; }
 
+        // 2. 1순위, 2순위 모두 선택해야 다음 단계로 이동 가능하게 제한
         function goToStep2() {
-            if(!firstChoice) return alert("최소 1순위 희망 날짜는 선택해야 합니다.");
+            if(!firstChoice || !secondChoice) return alert("1순위와 2순위 희망 날짜를 모두 선택해야 합니다.");
             document.getElementById('step1').classList.add('hidden');
             document.getElementById('step2').classList.remove('hidden');
             document.getElementById('step1Tab').classList.remove('step-active');
             document.getElementById('step2Tab').classList.add('step-active');
             document.getElementById('confirmDate1').innerText = firstChoice;
-            document.getElementById('confirmDate2').innerText = secondChoice || '미선택';
+            document.getElementById('confirmDate2').innerText = secondChoice;
         }
 
         function goToStep1() {
@@ -444,8 +449,9 @@
         }
 
         async function submitApplication() {
-            const fields = ['region', 'schoolName','userName','phone','studentCount'];
+            const fields = ['region', 'schoolName','userName','phone','studentCount', 'teacherCount'];
             if(!fields.every(id => document.getElementById(id).value.trim())) return alert("모든 필수 정보를 입력해주세요.");
+            
             const schoolLevel = document.querySelector('input[name="schoolLevel"]:checked').value;
             const busNeeded = document.querySelector('input[name="busNeeded"]:checked').value;
             let busType = "해당없음";
@@ -458,22 +464,25 @@
             const {data} = await _supabase.from('applications').select('id').eq('first_choice', firstChoice);
             if(config && data && data.length >= config.max_count) {
                 showLoading(false);
-                alert("1순위 날짜가 마감되었습니다.");
+                alert("1순위 날짜가 그새 마감되었습니다.");
                 return goToStep1();
             }
+            
             const {error} = await _supabase.from('applications').insert([{
                 region: document.getElementById('region').value,
                 school_level: schoolLevel,
                 school_name: document.getElementById('schoolName').value,
-                position: document.getElementById('position').value,
                 user_name: document.getElementById('userName').value,
                 phone: document.getElementById('phone').value,
+                position: document.getElementById('position').value,
                 first_choice: firstChoice,
                 second_choice: secondChoice,
+                teacher_count: parseInt(document.getElementById('teacherCount').value),
                 student_count: parseInt(document.getElementById('studentCount').value),
                 bus_needed: busNeeded,
                 bus_type: busType
             }]);
+            
             showLoading(false);
             if(error) alert("오류: " + error.message);
             else {
@@ -531,7 +540,7 @@
                         <td class="p-3">${app.phone || '-'}</td>
                         <td class="p-3 text-blue-600 font-bold text-[11px]">${app.first_choice}</td>
                         <td class="p-3 text-blue-400 font-bold text-[11px]">${app.second_choice || '-'}</td>
-                        <td class="p-3 text-center">${app.student_count || '0'}명</td>
+                        <td class="p-3 text-center text-[11px]"><span class="font-bold">${app.teacher_count || 0}</span> / <span class="text-gray-500">${app.student_count || 0}</span></td>
                         <td class="p-3 text-[11px]">${app.bus_needed === '유' ? `<span class='text-blue-500 font-bold'>운영(${app.bus_type})</span>` : '미운영'}</td>
                         <td class="p-3"><button onclick="deleteApp(${app.id})" class="text-red-400 hover:underline">삭제</button></td>
                     `;
@@ -549,7 +558,6 @@
 
         async function saveConfig() {
             showLoading(true);
-            // datetime-local 값에 한국 타임존(+09:00)을 강제로 붙여서 저장
             const startTime = document.getElementById('editStart').value ? document.getElementById('editStart').value + ":00+09:00" : null;
             const endTime = document.getElementById('editEnd').value ? document.getElementById('editEnd').value + ":00+09:00" : null;
 
