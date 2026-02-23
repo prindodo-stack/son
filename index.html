@@ -283,8 +283,12 @@
             showLoading(true);
             await loadInitialData();
             
-            // 1. 신청 시작일 기준으로 초기 달력 세팅
-            if (config && config.app_start_time) {
+            // 교육 운영 시작일(신청 가능일 첫날) 기준으로 초기 달력 세팅
+            if (config && config.edu_op_start) {
+                const startDate = new Date(config.edu_op_start);
+                currentYear = startDate.getFullYear();
+                currentMonth = startDate.getMonth();
+            } else if (config && config.app_start_time) {
                 const startDate = new Date(config.app_start_time);
                 currentYear = startDate.getFullYear();
                 currentMonth = startDate.getMonth();
@@ -430,7 +434,6 @@
         }
         function lock(m) { document.getElementById('step1').innerHTML = `<div class="p-16 text-center text-red-500 font-bold bg-red-50 border rounded-xl">${m}</div>`; }
 
-        // 2. 1순위, 2순위 모두 선택해야 다음 단계로 이동 가능하게 제한
         function goToStep2() {
             if(!firstChoice || !secondChoice) return alert("1순위와 2순위 희망 날짜를 모두 선택해야 합니다.");
             document.getElementById('step1').classList.add('hidden');
