@@ -76,6 +76,33 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">소속 지역</label>
+                        <select id="region" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="">지역 선택</option>
+                            <option value="목포">목포</option><option value="여수">여수</option><option value="순천">순천</option>
+                            <option value="나주">나주</option><option value="광양">광양</option><option value="담양">담양</option>
+                            <option value="곡성">곡성</option><option value="구례">구례</option><option value="고흥">고흥</option>
+                            <option value="보성">보성</option><option value="화순">화순</option><option value="장흥">장흥</option>
+                            <option value="강진">강진</option><option value="해남">해남</option><option value="영암">영암</option>
+                            <option value="무안">무안</option><option value="함평">함평</option><option value="영광">영광</option>
+                            <option value="장성">장성</option><option value="완도">완도</option><option value="진도">진도</option>
+                            <option value="신안">신안</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">학교급</label>
+                        <div class="flex gap-4">
+                            <div class="flex-1">
+                                <input type="radio" name="schoolLevel" id="levelEle" value="초" class="hidden radio-box" checked>
+                                <label for="levelEle" class="block w-full text-center p-3 border rounded-lg cursor-pointer font-semibold bg-white">초</label>
+                            </div>
+                            <div class="flex-1">
+                                <input type="radio" name="schoolLevel" id="levelMid" value="중" class="hidden radio-box">
+                                <label for="levelMid" class="block w-full text-center p-3 border rounded-lg cursor-pointer font-semibold bg-white">중</label>
+                            </div>
+                        </div>
+                    </div>
                     <div><label class="block text-sm font-semibold text-gray-700 mb-1">소속 학교명</label><input type="text" id="schoolName" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 무지개초등학교"></div>
                     <div><label class="block text-sm font-semibold text-gray-700 mb-1">직위</label><input type="text" id="position" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 교사"></div>
                     <div><label class="block text-sm font-semibold text-gray-700 mb-1">신청자 성함</label><input type="text" id="userName" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="실명을 입력하세요"></div>
@@ -155,6 +182,7 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="p-3">일시</th>
+                                    <th class="p-3">학교급/지역</th>
                                     <th class="p-3">학교/이름</th>
                                     <th class="p-3">연락처</th>
                                     <th class="p-3">희망일</th>
@@ -172,8 +200,15 @@
                 <div id="adminConfigSection" class="hidden space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="bg-gray-50 p-6 rounded-xl space-y-4 border">
-                            <h3 class="font-bold border-b pb-2">기본 설정 변경</h3>
+                            <h3 class="font-bold border-b pb-2">시스템 설정 변경</h3>
                             <div><label class="text-xs font-bold text-gray-500">메인 타이틀</label><input type="text" id="editTitle" class="w-full p-2 border rounded mt-1 text-sm"></div>
+                            
+                            <div class="grid grid-cols-2 gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <div class="col-span-2 text-xs font-bold text-blue-700 mb-1">📅 교육 운영 기간 (달력 활성화 범위)</div>
+                                <div><label class="text-[10px] text-gray-500">시작일</label><input type="date" id="editEduStart" class="w-full p-2 border rounded mt-1 text-sm"></div>
+                                <div><label class="text-[10px] text-gray-500">종료일</label><input type="date" id="editEduEnd" class="w-full p-2 border rounded mt-1 text-sm"></div>
+                            </div>
+
                             <div class="grid grid-cols-2 gap-2">
                                 <div><label class="text-xs font-bold text-gray-500">날짜별 제한팀수</label><input type="number" id="editMax" class="w-full p-2 border rounded mt-1 text-sm"></div>
                                 <div><label class="text-xs font-bold text-gray-500">강제마감 여부</label>
@@ -183,20 +218,27 @@
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-xs font-bold text-gray-500">신청 시작</label><input type="datetime-local" id="editStart" class="w-full p-2 border rounded mt-1 text-sm"></div>
-                                <div><label class="text-xs font-bold text-gray-500">신청 종료</label><input type="datetime-local" id="editEnd" class="w-full p-2 border rounded mt-1 text-sm"></div>
+                                <div><label class="text-xs font-bold text-gray-500">신청 시작(시간)</label><input type="datetime-local" id="editStart" class="w-full p-2 border rounded mt-1 text-sm"></div>
+                                <div><label class="text-xs font-bold text-gray-500">신청 종료(시간)</label><input type="datetime-local" id="editEnd" class="w-full p-2 border rounded mt-1 text-sm"></div>
                             </div>
                             <button onclick="saveConfig()" class="w-full bg-blue-600 text-white font-bold py-2 rounded">설정 저장</button>
                         </div>
                         
                         <div class="space-y-4">
-                            <h3 class="font-bold border-b pb-2">날짜 차단 설정</h3>
+                            <div class="flex justify-between items-center border-b pb-2">
+                                <h3 class="font-bold">날짜 차단 설정</h3>
+                                <div class="flex space-x-1">
+                                    <button onclick="changeMonth(-1)" class="px-2 py-1 border rounded text-xs hover:bg-gray-100">&lt;</button>
+                                    <button onclick="changeMonth(1)" class="px-2 py-1 border rounded text-xs hover:bg-gray-100">&gt;</button>
+                                </div>
+                            </div>
                             <div class="bg-white border rounded-xl p-4 shadow-inner">
-                                <div id="adminCalendarHeader" class="flex justify-between mb-2 font-bold text-sm"></div>
+                                <div id="adminCalendarHeader" class="text-center mb-2 font-bold text-sm"></div>
                                 <div class="grid grid-cols-7 gap-1 text-[10px] text-center mb-1 text-gray-400">
                                     <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
                                 </div>
                                 <div id="adminCalendarBody" class="grid grid-cols-7 gap-1"></div>
+                                <p class="text-[10px] text-gray-400 mt-3 text-center">* 클릭하여 해당 날짜를 신청 불가 처리합니다.</p>
                             </div>
                         </div>
                     </div>
@@ -218,42 +260,54 @@
 
         window.onload = async () => {
             showLoading(true);
-            await loadInitialData();
             const now = new Date();
             currentYear = now.getFullYear();
             currentMonth = now.getMonth();
+            await loadInitialData();
             renderCalendar();
             checkAppPeriod();
             showLoading(false);
         };
 
         async function loadInitialData() {
-            const [{data: cfg}, {data: blk}, {data: apps}] = await Promise.all([
-                _supabase.from('config').select('*').single(),
-                _supabase.from('blocked_dates').select('block_date'),
-                _supabase.from('applications').select('first_choice')
-            ]);
-            config = cfg;
-            blockedDates = blk.map(b => b.block_date);
-            dailyCountMap = {};
-            apps.forEach(a => {
-                const d = a.first_choice.split(' ')[0];
-                dailyCountMap[d] = (dailyCountMap[d] || 0) + 1;
-            });
+            try {
+                const [cfgRes, blkRes, appsRes] = await Promise.all([
+                    _supabase.from('config').select('*').single(),
+                    _supabase.from('blocked_dates').select('block_date'),
+                    _supabase.from('applications').select('first_choice')
+                ]);
 
-            document.getElementById('mainTitle').innerText = config.main_title;
-            document.getElementById('subTitle').innerText = config.sub_title;
+                config = cfgRes.data || { 
+                    main_title: 'AI코딩 교실 신청 시스템', 
+                    max_count: 1, 
+                    is_force_closed: false 
+                };
+                
+                blockedDates = blkRes.data ? blkRes.data.map(b => b.block_date) : [];
+                
+                dailyCountMap = {};
+                if(appsRes.data) {
+                    appsRes.data.forEach(a => {
+                        if(a.first_choice) {
+                            const d = a.first_choice.split(' ')[0];
+                            dailyCountMap[d] = (dailyCountMap[d] || 0) + 1;
+                        }
+                    });
+                }
+
+                document.getElementById('mainTitle').innerText = config.main_title || 'AI코딩 교실 신청 시스템';
+                document.getElementById('subTitle').innerText = config.sub_title || '-';
+            } catch (e) {
+                console.error("초기 데이터 로드 중 오류:", e);
+            }
         }
 
         function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
 
         function toggleBusType(show) {
             const section = document.getElementById('busTypeSection');
-            if (show) {
-                section.classList.remove('hidden');
-            } else {
-                section.classList.add('hidden');
-            }
+            if (show) section.classList.remove('hidden');
+            else section.classList.add('hidden');
         }
 
         function renderCalendar() {
@@ -264,30 +318,42 @@
             const first = new Date(currentYear, currentMonth, 1).getDay();
             const last = new Date(currentYear, currentMonth+1, 0).getDate();
 
+            const opStart = (config && config.edu_op_start) ? new Date(config.edu_op_start) : null;
+            const opEnd = (config && config.edu_op_end) ? new Date(config.edu_op_end) : null;
+
             for(let i=0; i<first; i++) body.appendChild(Object.assign(document.createElement('div'), {className:'day-cell bg-gray-50'}));
 
             for(let d=1; d<=last; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const div = document.createElement('div');
-                div.className = 'day-cell p-2 text-sm cursor-pointer flex flex-col justify-between';
+                div.className = 'day-cell p-2 text-sm flex flex-col justify-between';
                 div.innerHTML = `<span class="font-bold">${d}</span>`;
 
+                const thisDate = new Date(dateStr);
                 const count = dailyCountMap[dateStr] || 0;
                 const isBlocked = blockedDates.includes(dateStr);
-                const isWeekend = [0, 6].includes(new Date(dateStr).getDay());
+                const isWeekend = [0, 6].includes(thisDate.getDay());
                 
+                let isOutRange = false;
+                if(opStart && thisDate < opStart) isOutRange = true;
+                if(opEnd && thisDate > opEnd) isOutRange = true;
+
                 const tag = document.createElement('span');
                 tag.className = 'text-[9px] font-bold py-0.5 px-1 rounded text-center';
 
-                if(isBlocked || isWeekend) {
+                if(isOutRange) {
+                    div.classList.add('bg-gray-100', 'text-gray-300', 'cursor-not-allowed');
+                    tag.innerText = "비운영";
+                } else if(isBlocked || isWeekend) {
                     div.classList.add('blocked');
                     tag.innerText = "불가";
-                } else if(count >= config.max_count) {
+                } else if(config && count >= config.max_count) {
                     div.classList.add('full');
                     tag.innerText = "마감";
                     tag.classList.add('bg-gray-200');
                 } else {
-                    tag.innerText = `가능(${config.max_count-count})`;
+                    div.classList.add('cursor-pointer');
+                    tag.innerText = config ? `가능(${config.max_count-count})` : '가능';
                     tag.classList.add('bg-blue-100', 'text-blue-600');
                     div.onclick = () => { selectedDate = dateStr; document.getElementById('selectedDateText').innerText = dateStr; renderCalendar(); };
                 }
@@ -307,10 +373,11 @@
         }
 
         function checkAppPeriod() {
+            if(!config) return;
             const now = new Date();
             if(config.is_force_closed) return lock("관리자에 의해 마감되었습니다.");
-            if(now < new Date(config.app_start_time)) return lock("신청 기간이 아닙니다.");
-            if(now > new Date(config.app_end_time)) return lock("신청이 종료되었습니다.");
+            if(config.app_start_time && now < new Date(config.app_start_time)) return lock("신청 기간이 아닙니다.");
+            if(config.app_end_time && now > new Date(config.app_end_time)) return lock("신청이 종료되었습니다.");
         }
         function lock(m) { document.getElementById('step1').innerHTML = `<div class="p-16 text-center text-red-500 font-bold bg-red-50 border rounded-xl">${m}</div>`; }
 
@@ -331,9 +398,10 @@
         }
 
         async function submitApplication() {
-            const fields = ['schoolName','userName','phone','studentCount'];
+            const fields = ['region', 'schoolName','userName','phone','studentCount'];
             if(!fields.every(id => document.getElementById(id).value.trim())) return alert("모든 필수 정보를 입력해주세요.");
             
+            const schoolLevel = document.querySelector('input[name="schoolLevel"]:checked').value;
             const busNeeded = document.querySelector('input[name="busNeeded"]:checked').value;
             let busType = "해당없음";
             if(busNeeded === "유") {
@@ -344,13 +412,15 @@
 
             showLoading(true);
             const {data} = await _supabase.from('applications').select('id').eq('first_choice', selectedDate);
-            if(data && data.length >= config.max_count) {
+            if(config && data && data.length >= config.max_count) {
                 showLoading(false);
                 alert("선택하신 날짜의 예약이 그새 마감되었습니다. 다른 날짜를 선택해주세요.");
                 return goToStep1();
             }
 
             const {error} = await _supabase.from('applications').insert([{
+                region: document.getElementById('region').value,
+                school_level: schoolLevel,
                 school_name: document.getElementById('schoolName').value,
                 position: document.getElementById('position').value,
                 user_name: document.getElementById('userName').value,
@@ -374,17 +444,37 @@
         async function toggleAdmin() {
             const p = prompt("Password?");
             if(p === "1416") {
-                document.getElementById('userNav').classList.add('hidden');
-                document.getElementById('step1').classList.add('hidden');
-                document.getElementById('step2').classList.add('hidden');
-                document.getElementById('adminPanel').classList.remove('hidden');
-                loadAdminData();
-                renderAdminCalendar();
-                document.getElementById('editTitle').value = config.main_title;
-                document.getElementById('editMax').value = config.max_count;
-                document.getElementById('editForce').value = String(config.is_force_closed);
-                document.getElementById('editStart').value = config.app_start_time.substring(0, 16);
-                document.getElementById('editEnd').value = config.app_end_time.substring(0, 16);
+                try {
+                    // 화면 전환
+                    document.getElementById('userNav').classList.add('hidden');
+                    document.getElementById('step1').classList.add('hidden');
+                    document.getElementById('step2').classList.add('hidden');
+                    document.getElementById('adminPanel').classList.remove('hidden');
+                    
+                    // 데이터 로드
+                    await loadAdminData();
+                    renderAdminCalendar();
+                    
+                    // 입력폼 채우기
+                    if(config) {
+                        document.getElementById('editTitle').value = config.main_title || '';
+                        document.getElementById('editMax').value = config.max_count || 1;
+                        document.getElementById('editForce').value = String(config.is_force_closed || false);
+                        
+                        // 시간 형식 안전하게 변환 (T 포함 16자리)
+                        const formatTime = (t) => (t && t.length >= 16) ? t.substring(0, 16).replace(' ', 'T') : '';
+                        document.getElementById('editStart').value = formatTime(config.app_start_time);
+                        document.getElementById('editEnd').value = formatTime(config.app_end_time);
+                        
+                        document.getElementById('editEduStart').value = config.edu_op_start || '';
+                        document.getElementById('editEduEnd').value = config.edu_op_end || '';
+                    }
+                } catch (e) {
+                    console.error("관리자 페이지 진입 중 오류:", e);
+                    alert("관리자 페이지를 불러오는 중 오류가 발생했습니다.");
+                }
+            } else if (p !== null) {
+                alert("비밀번호가 틀렸습니다.");
             }
         }
 
@@ -403,12 +493,14 @@
             if(data) {
                 data.forEach(app => {
                     const tr = document.createElement('tr');
+                    const createdAtStr = app.created_at ? app.created_at.substring(5,16).replace('T',' ') : '-';
                     tr.innerHTML = `
-                        <td class="p-3 text-[11px]">${app.created_at.substring(5,16).replace('T',' ')}</td>
-                        <td class="p-3 font-bold">${app.user_name}<br><span class="text-gray-400 font-normal">${app.school_name}</span></td>
-                        <td class="p-3">${app.phone}</td>
-                        <td class="p-3 text-blue-600 font-bold text-[11px]">${app.first_choice}</td>
-                        <td class="p-3 text-center">${app.student_count || '-'}명</td>
+                        <td class="p-3 text-[11px]">${createdAtStr}</td>
+                        <td class="p-3"><span class="bg-gray-100 px-1 rounded font-bold">${app.school_level || '-'}</span> ${app.region || '-'}</td>
+                        <td class="p-3 font-bold">${app.user_name || '이름없음'}<br><span class="text-gray-400 font-normal text-[11px]">${app.school_name || '-'}</span></td>
+                        <td class="p-3">${app.phone || '-'}</td>
+                        <td class="p-3 text-blue-600 font-bold text-[11px]">${app.first_choice || '-'}</td>
+                        <td class="p-3 text-center">${app.student_count || '0'}명</td>
                         <td class="p-3 text-[11px]">${app.bus_needed === '유' ? `<span class='text-blue-500 font-bold'>운영(${app.bus_type})</span>` : '미운영'}</td>
                         <td class="p-3"><button onclick="deleteApp(${app.id})" class="text-red-400 hover:underline">삭제</button></td>
                     `;
@@ -420,23 +512,35 @@
         async function deleteApp(id) {
             if(confirm("이 신청 내역을 정말 삭제하시겠습니까?")) {
                 await _supabase.from('applications').delete().eq('id', id);
-                loadAdminData();
-                loadInitialData().then(renderCalendar);
+                await loadAdminData();
+                await loadInitialData();
+                renderCalendar();
             }
         }
 
         async function saveConfig() {
             showLoading(true);
             const up = {
+                id: 1, // id를 명시하여 upsert
                 main_title: document.getElementById('editTitle').value,
-                max_count: parseInt(document.getElementById('editMax').value),
+                max_count: parseInt(document.getElementById('editMax').value) || 1,
                 is_force_closed: document.getElementById('editForce').value === 'true',
                 app_start_time: document.getElementById('editStart').value,
-                app_end_time: document.getElementById('editEnd').value
+                app_end_time: document.getElementById('editEnd').value,
+                edu_op_start: document.getElementById('editEduStart').value,
+                edu_op_end: document.getElementById('editEduEnd').value
             };
-            await _supabase.from('config').update(up).eq('id', 1);
-            alert("시스템 설정이 저장되었습니다.");
-            location.reload();
+            
+            // update 대신 upsert 사용 (데이터가 없으면 생성, 있으면 수정)
+            const { error } = await _supabase.from('config').upsert(up);
+            
+            showLoading(false);
+            if(error) {
+                alert("저장 실패: " + error.message);
+            } else {
+                alert("시스템 설정이 저장되었습니다.");
+                location.reload();
+            }
         }
 
         function renderAdminCalendar() {
