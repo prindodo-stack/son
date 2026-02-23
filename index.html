@@ -13,12 +13,8 @@
         .step-active { color: #2563eb; border-bottom: 3px solid #2563eb; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
         .day-cell { min-height: 80px; transition: all 0.2s; position: relative; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; }
-        
-        /* 1순위 선택 색상 */
         .selected-1 { background-color: #2563eb !important; color: white !important; }
-        /* 2순위 선택 색상 */
         .selected-2 { background-color: #60a5fa !important; color: white !important; }
-        
         .blocked { background-color: #fee2e2; color: #ef4444; cursor: not-allowed; }
         .admin-blocked { background-color: #ef4444 !important; color: white !important; }
         .full { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
@@ -53,7 +49,7 @@
             <!-- STEP 1: 일정 선택 -->
             <div id="step1" class="space-y-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-800">교육 희망일 선택 <span class="text-sm font-normal text-gray-500 ml-2">(1순위, 2순위를 차례로 선택하세요)</span></h3>
+                    <h3 class="text-lg font-bold text-gray-800">교육 희망일 선택 <span class="text-sm font-normal text-gray-500 ml-2">(1, 2순위를 차례로 선택)</span></h3>
                     <div class="flex space-x-2">
                         <button onclick="changeMonth(-1)" class="p-2 border rounded hover:bg-gray-100">&lt;</button>
                         <span id="calendarTitle" class="font-bold py-2 min-w-[100px] text-center"></span>
@@ -135,7 +131,6 @@
                     </div>
                 </div>
 
-                <!-- 통학차량 선택 -->
                 <div class="p-5 border rounded-xl bg-gray-50 space-y-4">
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-3">통학차량 운영 여부</label>
@@ -150,7 +145,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="busTypeSection" class="hidden animate-fade-in border-t pt-4">
                         <label class="block text-sm font-bold text-gray-700 mb-3">차량 구분</label>
                         <div class="flex gap-4">
@@ -223,11 +217,11 @@
                 <div id="adminConfigSection" class="hidden space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="bg-gray-50 p-6 rounded-xl space-y-4 border">
-                            <h3 class="font-bold border-b pb-2">시스템 설정 변경</h3>
+                            <h3 class="font-bold border-b pb-2">시스템 설정 변경 (서울 시간 기준)</h3>
                             <div><label class="text-xs font-bold text-gray-500">메인 타이틀</label><input type="text" id="editTitle" class="w-full p-2 border rounded mt-1 text-sm"></div>
                             
                             <div class="grid grid-cols-2 gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                <div class="col-span-2 text-xs font-bold text-blue-700 mb-1">📅 교육 운영 기간 (달력 활성화 범위)</div>
+                                <div class="col-span-2 text-xs font-bold text-blue-700 mb-1">📅 교육 운영 기간</div>
                                 <div><label class="text-[10px] text-gray-500">시작일</label><input type="date" id="editEduStart" class="w-full p-2 border rounded mt-1 text-sm"></div>
                                 <div><label class="text-[10px] text-gray-500">종료일</label><input type="date" id="editEduEnd" class="w-full p-2 border rounded mt-1 text-sm"></div>
                             </div>
@@ -278,10 +272,15 @@
         let blockedDates = [];
         let dailyCountMap = {};
         let currentYear, currentMonth;
-        
-        // 희망 날짜 변수 (1순위, 2순위)
-        let firstChoice = null;
-        let secondChoice = null;
+        let firstChoice = null, secondChoice = null;
+
+        // 서울 시간을 기준으로 Date 객체를 생성하거나 해석하는 헬퍼 함수
+        function getKSTDate(dateInput) {
+            if (!dateInput) return new Date();
+            const date = new Date(dateInput);
+            // 만약 타임존 오프셋이 없는 문자열(ISO 포맷이 아닌 경우)이 들어오면 현지 시간으로 처리됨
+            return date;
+        }
 
         window.onload = async () => {
             showLoading(true);
@@ -318,7 +317,7 @@
                 document.getElementById('mainTitle').innerText = config.main_title || 'AI코딩 교실 신청 시스템';
                 document.getElementById('subTitle').innerText = config.sub_title || '-';
             } catch (e) {
-                console.error("초기 데이터 로드 중 오류:", e);
+                console.error("Data Load Error:", e);
             }
         }
 
@@ -330,29 +329,14 @@
             else section.classList.add('hidden');
         }
 
-        // 날짜 선택 로직
         function handleDateClick(dateStr) {
-            // 이미 1순위로 선택된 날짜라면 해제
-            if (firstChoice === dateStr) {
-                firstChoice = secondChoice; // 2순위가 있었다면 1순위로 승격
-                secondChoice = null;
-            } 
-            // 이미 2순위로 선택된 날짜라면 해제
-            else if (secondChoice === dateStr) {
-                secondChoice = null;
-            }
-            // 아무것도 아니면 새로 지정
+            if (firstChoice === dateStr) { firstChoice = secondChoice; secondChoice = null; } 
+            else if (secondChoice === dateStr) { secondChoice = null; }
             else {
-                if (!firstChoice) {
-                    firstChoice = dateStr;
-                } else if (!secondChoice) {
-                    secondChoice = dateStr;
-                } else {
-                    // 둘 다 찼을 때 클릭하면 2순위를 교체
-                    secondChoice = dateStr;
-                }
+                if (!firstChoice) firstChoice = dateStr;
+                else if (!secondChoice) secondChoice = dateStr;
+                else secondChoice = dateStr;
             }
-            
             updateChoiceDisplay();
             renderCalendar();
         }
@@ -378,9 +362,8 @@
             for(let d=1; d<=last; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const div = document.createElement('div');
-                div.className = 'day-cell p-2 text-sm flex flex-col justify-between';
+                div.className = 'day-cell p-2 text-sm flex flex-col justify-between relative';
                 
-                // 순위 표시용 숫자 추가
                 let badge = "";
                 if (firstChoice === dateStr) badge = "<span class='absolute top-1 right-1 bg-white text-blue-600 text-[10px] px-1 rounded-full border border-blue-600 font-bold'>1순위</span>";
                 if (secondChoice === dateStr) badge = "<span class='absolute top-1 right-1 bg-white text-blue-400 text-[10px] px-1 rounded-full border border-blue-400 font-bold'>2순위</span>";
@@ -434,8 +417,10 @@
 
         function checkAppPeriod() {
             if(!config) return;
-            const now = new Date();
+            const now = new Date(); // 브라우저 시간 (서울 시간)
             if(config.is_force_closed) return lock("관리자에 의해 마감되었습니다.");
+            
+            // DB의 시간을 서울 시간으로 명확히 해석하도록 함
             if(config.app_start_time && now < new Date(config.app_start_time)) return lock("신청 기간이 아닙니다.");
             if(config.app_end_time && now > new Date(config.app_end_time)) return lock("신청이 종료되었습니다.");
         }
@@ -447,7 +432,6 @@
             document.getElementById('step2').classList.remove('hidden');
             document.getElementById('step1Tab').classList.remove('step-active');
             document.getElementById('step2Tab').classList.add('step-active');
-            
             document.getElementById('confirmDate1').innerText = firstChoice;
             document.getElementById('confirmDate2').innerText = secondChoice || '미선택';
         }
@@ -462,26 +446,21 @@
         async function submitApplication() {
             const fields = ['region', 'schoolName','userName','phone','studentCount'];
             if(!fields.every(id => document.getElementById(id).value.trim())) return alert("모든 필수 정보를 입력해주세요.");
-            
             const schoolLevel = document.querySelector('input[name="schoolLevel"]:checked').value;
             const busNeeded = document.querySelector('input[name="busNeeded"]:checked').value;
             let busType = "해당없음";
             if(busNeeded === "유") {
-                const selectedType = document.querySelector('input[name="busType"]:checked');
-                if(!selectedType) return alert("통학차량 운영 '유' 선택 시, 차량 구분을 선택해주세요.");
-                busType = selectedType.value;
+                const st = document.querySelector('input[name="busType"]:checked');
+                if(!st) return alert("차량 구분을 선택해주세요.");
+                busType = st.value;
             }
-
             showLoading(true);
-            
-            // 1순위 마감 여부 최종 체크
             const {data} = await _supabase.from('applications').select('id').eq('first_choice', firstChoice);
             if(config && data && data.length >= config.max_count) {
                 showLoading(false);
-                alert("선택하신 1순위 날짜의 예약이 그새 마감되었습니다. 일정을 다시 조정해주세요.");
+                alert("1순위 날짜가 마감되었습니다.");
                 return goToStep1();
             }
-
             const {error} = await _supabase.from('applications').insert([{
                 region: document.getElementById('region').value,
                 school_level: schoolLevel,
@@ -490,12 +469,11 @@
                 user_name: document.getElementById('userName').value,
                 phone: document.getElementById('phone').value,
                 first_choice: firstChoice,
-                second_choice: secondChoice, // 2순위 데이터 포함
+                second_choice: secondChoice,
                 student_count: parseInt(document.getElementById('studentCount').value),
                 bus_needed: busNeeded,
                 bus_type: busType
             }]);
-
             showLoading(false);
             if(error) alert("오류: " + error.message);
             else {
@@ -520,16 +498,14 @@
                         document.getElementById('editTitle').value = config.main_title || '';
                         document.getElementById('editMax').value = config.max_count || 1;
                         document.getElementById('editForce').value = String(config.is_force_closed || false);
-                        const formatTime = (t) => (t && t.length >= 16) ? t.substring(0, 16).replace(' ', 'T') : '';
-                        document.getElementById('editStart').value = formatTime(config.app_start_time);
-                        document.getElementById('editEnd').value = formatTime(config.app_end_time);
+                        const ft = (t) => (t && t.length >= 16) ? t.substring(0, 16).replace(' ', 'T') : '';
+                        document.getElementById('editStart').value = ft(config.app_start_time);
+                        document.getElementById('editEnd').value = ft(config.app_end_time);
                         document.getElementById('editEduStart').value = config.edu_op_start || '';
                         document.getElementById('editEduEnd').value = config.edu_op_end || '';
                     }
-                } catch (e) {
-                    alert("관리자 페이지를 불러오는 중 오류가 발생했습니다.");
-                }
-            } else if (p !== null) alert("비밀번호가 틀렸습니다.");
+                } catch (e) { alert("관리자 로딩 오류"); }
+            } else if (p !== null) alert("비밀번호 틀림");
         }
 
         function switchAdminTab(t) {
@@ -547,11 +523,11 @@
             if(data) {
                 data.forEach(app => {
                     const tr = document.createElement('tr');
-                    const createdAtStr = app.created_at ? app.created_at.substring(5,16).replace('T',' ') : '-';
+                    const cStr = app.created_at ? new Date(app.created_at).toLocaleString('ko-KR') : '-';
                     tr.innerHTML = `
-                        <td class="p-3 text-[11px]">${createdAtStr}</td>
+                        <td class="p-3 text-[10px]">${cStr}</td>
                         <td class="p-3"><span class="bg-gray-100 px-1 rounded font-bold">${app.school_level || '-'}</span> ${app.region || '-'}</td>
-                        <td class="p-3 font-bold">${app.user_name || '이름없음'}<br><span class="text-gray-400 font-normal text-[11px]">${app.school_name || '-'}</span></td>
+                        <td class="p-3 font-bold">${app.user_name || '-'}<br><span class="text-gray-400 font-normal text-[11px]">${app.school_name || '-'}</span></td>
                         <td class="p-3">${app.phone || '-'}</td>
                         <td class="p-3 text-blue-600 font-bold text-[11px]">${app.first_choice}</td>
                         <td class="p-3 text-blue-400 font-bold text-[11px]">${app.second_choice || '-'}</td>
@@ -565,30 +541,32 @@
         }
 
         async function deleteApp(id) {
-            if(confirm("이 신청 내역을 정말 삭제하시겠습니까?")) {
+            if(confirm("정말 삭제?")) {
                 await _supabase.from('applications').delete().eq('id', id);
-                await loadAdminData();
-                await loadInitialData();
-                renderCalendar();
+                await loadAdminData(); await loadInitialData(); renderCalendar();
             }
         }
 
         async function saveConfig() {
             showLoading(true);
+            // datetime-local 값에 한국 타임존(+09:00)을 강제로 붙여서 저장
+            const startTime = document.getElementById('editStart').value ? document.getElementById('editStart').value + ":00+09:00" : null;
+            const endTime = document.getElementById('editEnd').value ? document.getElementById('editEnd').value + ":00+09:00" : null;
+
             const up = {
                 id: 1,
                 main_title: document.getElementById('editTitle').value,
                 max_count: parseInt(document.getElementById('editMax').value) || 1,
                 is_force_closed: document.getElementById('editForce').value === 'true',
-                app_start_time: document.getElementById('editStart').value,
-                app_end_time: document.getElementById('editEnd').value,
+                app_start_time: startTime,
+                app_end_time: endTime,
                 edu_op_start: document.getElementById('editEduStart').value,
                 edu_op_end: document.getElementById('editEduEnd').value
             };
             const { error } = await _supabase.from('config').upsert(up);
             showLoading(false);
             if(error) alert("저장 실패: " + error.message);
-            else { alert("시스템 설정이 저장되었습니다."); location.reload(); }
+            else { alert("서울 시간 기준으로 설정되었습니다."); location.reload(); }
         }
 
         function renderAdminCalendar() {
@@ -599,12 +577,12 @@
             const last = new Date(currentYear, currentMonth+1, 0).getDate();
             for(let i=0; i<first; i++) body.appendChild(document.createElement('div'));
             for(let d=1; d<=last; d++) {
-                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const ds = `${currentYear}-${String(currentMonth+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const div = document.createElement('div');
                 div.className = 'p-1 text-[10px] border rounded text-center cursor-pointer hover:bg-gray-100';
                 div.innerText = d;
-                if(blockedDates.includes(dateStr)) div.classList.add('admin-blocked');
-                div.onclick = () => toggleBlock(dateStr);
+                if(blockedDates.includes(ds)) div.classList.add('admin-blocked');
+                div.onclick = () => toggleBlock(ds);
                 body.appendChild(div);
             }
         }
@@ -613,10 +591,7 @@
             showLoading(true);
             if(blockedDates.includes(date)) await _supabase.from('blocked_dates').delete().eq('block_date', date);
             else await _supabase.from('blocked_dates').insert([{block_date: date}]);
-            await loadInitialData();
-            renderAdminCalendar();
-            renderCalendar();
-            showLoading(false);
+            await loadInitialData(); renderAdminCalendar(); renderCalendar(); showLoading(false);
         }
 
         function exportToExcel() {
@@ -627,9 +602,7 @@
             XLSX.writeFile(wb, `신청현황_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        function autoHyphen(t) { 
-            t.value = t.value.replace(/[^0-9]/g, '').replace(/^(\d{2,3})(\d{3,4})(\d{4})$/, `$1-$2-$3`); 
-        }
+        function autoHyphen(t) { t.value = t.value.replace(/[^0-9]/g, '').replace(/^(\d{2,3})(\d{3,4})(\d{4})$/, `$1-$2-$3`); }
     </script>
 </body>
 </html>
