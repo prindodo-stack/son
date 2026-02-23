@@ -13,7 +13,12 @@
         .step-active { color: #2563eb; border-bottom: 3px solid #2563eb; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
         .day-cell { min-height: 80px; transition: all 0.2s; position: relative; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; }
-        .selected-date { background-color: #2563eb !important; color: white !important; }
+        
+        /* 1순위 선택 색상 */
+        .selected-1 { background-color: #2563eb !important; color: white !important; }
+        /* 2순위 선택 색상 */
+        .selected-2 { background-color: #60a5fa !important; color: white !important; }
+        
         .blocked { background-color: #fee2e2; color: #ef4444; cursor: not-allowed; }
         .admin-blocked { background-color: #ef4444 !important; color: white !important; }
         .full { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
@@ -48,7 +53,7 @@
             <!-- STEP 1: 일정 선택 -->
             <div id="step1" class="space-y-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-800">교육 희망일 선택</h3>
+                    <h3 class="text-lg font-bold text-gray-800">교육 희망일 선택 <span class="text-sm font-normal text-gray-500 ml-2">(1순위, 2순위를 차례로 선택하세요)</span></h3>
                     <div class="flex space-x-2">
                         <button onclick="changeMonth(-1)" class="p-2 border rounded hover:bg-gray-100">&lt;</button>
                         <span id="calendarTitle" class="font-bold py-2 min-w-[100px] text-center"></span>
@@ -60,19 +65,36 @@
                 </div>
                 <div id="calendarBody" class="calendar-grid border-t border-l border-gray-100"></div>
                 
-                <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
-                    <label class="block text-sm font-bold text-blue-800 mb-1">선택된 날짜</label>
-                    <div id="selectedDateText" class="p-3 bg-white border rounded-lg font-bold text-blue-600 text-lg">- 날짜를 선택하세요 -</div>
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
+                        <label class="block text-xs font-bold text-blue-800 mb-1">1순위 희망일</label>
+                        <div id="firstChoiceText" class="p-2 bg-white border rounded-lg font-bold text-blue-600 text-sm">- 선택 -</div>
+                    </div>
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
+                        <label class="block text-xs font-bold text-blue-400 mb-1">2순위 희망일</label>
+                        <div id="secondChoiceText" class="p-2 bg-white border rounded-lg font-bold text-blue-400 text-sm">- 선택 -</div>
+                    </div>
                 </div>
                 <button onclick="goToStep2()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg">다음 단계로 (정보 입력)</button>
             </div>
 
             <!-- STEP 2: 정보 입력 -->
             <div id="step2" class="hidden space-y-6">
-                <div class="bg-gray-50 p-4 rounded-lg mb-6 flex justify-between items-center border">
-                    <span class="text-sm font-bold text-gray-600">선택한 일정:</span>
-                    <span id="finalDateConfirm" class="text-blue-600 font-bold text-lg"></span>
-                    <button onclick="goToStep1()" class="text-xs bg-gray-200 px-2 py-1 rounded">날짜변경</button>
+                <div class="bg-gray-50 p-4 rounded-lg mb-6 border">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-bold text-gray-600">선택한 일정</span>
+                        <button onclick="goToStep1()" class="text-xs bg-gray-200 px-2 py-1 rounded">날짜변경</button>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1 text-center bg-white p-2 border rounded">
+                            <p class="text-[10px] text-gray-400">1순위</p>
+                            <p id="confirmDate1" class="text-blue-600 font-bold"></p>
+                        </div>
+                        <div class="flex-1 text-center bg-white p-2 border rounded">
+                            <p class="text-[10px] text-gray-400">2순위</p>
+                            <p id="confirmDate2" class="text-blue-400 font-bold"></p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -185,7 +207,8 @@
                                     <th class="p-3">학교급/지역</th>
                                     <th class="p-3">학교/이름</th>
                                     <th class="p-3">연락처</th>
-                                    <th class="p-3">희망일</th>
+                                    <th class="p-3">희망일(1순위)</th>
+                                    <th class="p-3">희망일(2순위)</th>
                                     <th class="p-3">학생수</th>
                                     <th class="p-3">차량정보</th>
                                     <th class="p-3">관리</th>
@@ -238,7 +261,6 @@
                                     <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
                                 </div>
                                 <div id="adminCalendarBody" class="grid grid-cols-7 gap-1"></div>
-                                <p class="text-[10px] text-gray-400 mt-3 text-center">* 클릭하여 해당 날짜를 신청 불가 처리합니다.</p>
                             </div>
                         </div>
                     </div>
@@ -256,7 +278,10 @@
         let blockedDates = [];
         let dailyCountMap = {};
         let currentYear, currentMonth;
-        let selectedDate = null;
+        
+        // 희망 날짜 변수 (1순위, 2순위)
+        let firstChoice = null;
+        let secondChoice = null;
 
         window.onload = async () => {
             showLoading(true);
@@ -277,12 +302,7 @@
                     _supabase.from('applications').select('first_choice')
                 ]);
 
-                config = cfgRes.data || { 
-                    main_title: 'AI코딩 교실 신청 시스템', 
-                    max_count: 1, 
-                    is_force_closed: false 
-                };
-                
+                config = cfgRes.data || { main_title: 'AI코딩 교실 신청 시스템', max_count: 1, is_force_closed: false };
                 blockedDates = blkRes.data ? blkRes.data.map(b => b.block_date) : [];
                 
                 dailyCountMap = {};
@@ -310,6 +330,38 @@
             else section.classList.add('hidden');
         }
 
+        // 날짜 선택 로직
+        function handleDateClick(dateStr) {
+            // 이미 1순위로 선택된 날짜라면 해제
+            if (firstChoice === dateStr) {
+                firstChoice = secondChoice; // 2순위가 있었다면 1순위로 승격
+                secondChoice = null;
+            } 
+            // 이미 2순위로 선택된 날짜라면 해제
+            else if (secondChoice === dateStr) {
+                secondChoice = null;
+            }
+            // 아무것도 아니면 새로 지정
+            else {
+                if (!firstChoice) {
+                    firstChoice = dateStr;
+                } else if (!secondChoice) {
+                    secondChoice = dateStr;
+                } else {
+                    // 둘 다 찼을 때 클릭하면 2순위를 교체
+                    secondChoice = dateStr;
+                }
+            }
+            
+            updateChoiceDisplay();
+            renderCalendar();
+        }
+
+        function updateChoiceDisplay() {
+            document.getElementById('firstChoiceText').innerText = firstChoice || '- 선택 -';
+            document.getElementById('secondChoiceText').innerText = secondChoice || '- 선택 -';
+        }
+
         function renderCalendar() {
             const body = document.getElementById('calendarBody');
             document.getElementById('calendarTitle').innerText = `${currentYear}년 ${currentMonth+1}월`;
@@ -327,7 +379,13 @@
                 const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const div = document.createElement('div');
                 div.className = 'day-cell p-2 text-sm flex flex-col justify-between';
-                div.innerHTML = `<span class="font-bold">${d}</span>`;
+                
+                // 순위 표시용 숫자 추가
+                let badge = "";
+                if (firstChoice === dateStr) badge = "<span class='absolute top-1 right-1 bg-white text-blue-600 text-[10px] px-1 rounded-full border border-blue-600 font-bold'>1순위</span>";
+                if (secondChoice === dateStr) badge = "<span class='absolute top-1 right-1 bg-white text-blue-400 text-[10px] px-1 rounded-full border border-blue-400 font-bold'>2순위</span>";
+                
+                div.innerHTML = `<span class="font-bold">${d}</span>${badge}`;
 
                 const thisDate = new Date(dateStr);
                 const count = dailyCountMap[dateStr] || 0;
@@ -355,10 +413,12 @@
                     div.classList.add('cursor-pointer');
                     tag.innerText = config ? `가능(${config.max_count-count})` : '가능';
                     tag.classList.add('bg-blue-100', 'text-blue-600');
-                    div.onclick = () => { selectedDate = dateStr; document.getElementById('selectedDateText').innerText = dateStr; renderCalendar(); };
+                    div.onclick = () => handleDateClick(dateStr);
                 }
 
-                if(selectedDate === dateStr) div.classList.add('selected-date');
+                if(firstChoice === dateStr) div.classList.add('selected-1');
+                else if(secondChoice === dateStr) div.classList.add('selected-2');
+
                 div.appendChild(tag);
                 body.appendChild(div);
             }
@@ -382,12 +442,14 @@
         function lock(m) { document.getElementById('step1').innerHTML = `<div class="p-16 text-center text-red-500 font-bold bg-red-50 border rounded-xl">${m}</div>`; }
 
         function goToStep2() {
-            if(!selectedDate) return alert("교육 희망 날짜를 먼저 선택해주세요.");
+            if(!firstChoice) return alert("최소 1순위 희망 날짜는 선택해야 합니다.");
             document.getElementById('step1').classList.add('hidden');
             document.getElementById('step2').classList.remove('hidden');
             document.getElementById('step1Tab').classList.remove('step-active');
             document.getElementById('step2Tab').classList.add('step-active');
-            document.getElementById('finalDateConfirm').innerText = selectedDate;
+            
+            document.getElementById('confirmDate1').innerText = firstChoice;
+            document.getElementById('confirmDate2').innerText = secondChoice || '미선택';
         }
 
         function goToStep1() {
@@ -411,10 +473,12 @@
             }
 
             showLoading(true);
-            const {data} = await _supabase.from('applications').select('id').eq('first_choice', selectedDate);
+            
+            // 1순위 마감 여부 최종 체크
+            const {data} = await _supabase.from('applications').select('id').eq('first_choice', firstChoice);
             if(config && data && data.length >= config.max_count) {
                 showLoading(false);
-                alert("선택하신 날짜의 예약이 그새 마감되었습니다. 다른 날짜를 선택해주세요.");
+                alert("선택하신 1순위 날짜의 예약이 그새 마감되었습니다. 일정을 다시 조정해주세요.");
                 return goToStep1();
             }
 
@@ -425,7 +489,8 @@
                 position: document.getElementById('position').value,
                 user_name: document.getElementById('userName').value,
                 phone: document.getElementById('phone').value,
-                first_choice: selectedDate,
+                first_choice: firstChoice,
+                second_choice: secondChoice, // 2순위 데이터 포함
                 student_count: parseInt(document.getElementById('studentCount').value),
                 bus_needed: busNeeded,
                 bus_type: busType
@@ -445,37 +510,26 @@
             const p = prompt("Password?");
             if(p === "1416") {
                 try {
-                    // 화면 전환
                     document.getElementById('userNav').classList.add('hidden');
                     document.getElementById('step1').classList.add('hidden');
                     document.getElementById('step2').classList.add('hidden');
                     document.getElementById('adminPanel').classList.remove('hidden');
-                    
-                    // 데이터 로드
                     await loadAdminData();
                     renderAdminCalendar();
-                    
-                    // 입력폼 채우기
                     if(config) {
                         document.getElementById('editTitle').value = config.main_title || '';
                         document.getElementById('editMax').value = config.max_count || 1;
                         document.getElementById('editForce').value = String(config.is_force_closed || false);
-                        
-                        // 시간 형식 안전하게 변환 (T 포함 16자리)
                         const formatTime = (t) => (t && t.length >= 16) ? t.substring(0, 16).replace(' ', 'T') : '';
                         document.getElementById('editStart').value = formatTime(config.app_start_time);
                         document.getElementById('editEnd').value = formatTime(config.app_end_time);
-                        
                         document.getElementById('editEduStart').value = config.edu_op_start || '';
                         document.getElementById('editEduEnd').value = config.edu_op_end || '';
                     }
                 } catch (e) {
-                    console.error("관리자 페이지 진입 중 오류:", e);
                     alert("관리자 페이지를 불러오는 중 오류가 발생했습니다.");
                 }
-            } else if (p !== null) {
-                alert("비밀번호가 틀렸습니다.");
-            }
+            } else if (p !== null) alert("비밀번호가 틀렸습니다.");
         }
 
         function switchAdminTab(t) {
@@ -499,7 +553,8 @@
                         <td class="p-3"><span class="bg-gray-100 px-1 rounded font-bold">${app.school_level || '-'}</span> ${app.region || '-'}</td>
                         <td class="p-3 font-bold">${app.user_name || '이름없음'}<br><span class="text-gray-400 font-normal text-[11px]">${app.school_name || '-'}</span></td>
                         <td class="p-3">${app.phone || '-'}</td>
-                        <td class="p-3 text-blue-600 font-bold text-[11px]">${app.first_choice || '-'}</td>
+                        <td class="p-3 text-blue-600 font-bold text-[11px]">${app.first_choice}</td>
+                        <td class="p-3 text-blue-400 font-bold text-[11px]">${app.second_choice || '-'}</td>
                         <td class="p-3 text-center">${app.student_count || '0'}명</td>
                         <td class="p-3 text-[11px]">${app.bus_needed === '유' ? `<span class='text-blue-500 font-bold'>운영(${app.bus_type})</span>` : '미운영'}</td>
                         <td class="p-3"><button onclick="deleteApp(${app.id})" class="text-red-400 hover:underline">삭제</button></td>
@@ -521,7 +576,7 @@
         async function saveConfig() {
             showLoading(true);
             const up = {
-                id: 1, // id를 명시하여 upsert
+                id: 1,
                 main_title: document.getElementById('editTitle').value,
                 max_count: parseInt(document.getElementById('editMax').value) || 1,
                 is_force_closed: document.getElementById('editForce').value === 'true',
@@ -530,17 +585,10 @@
                 edu_op_start: document.getElementById('editEduStart').value,
                 edu_op_end: document.getElementById('editEduEnd').value
             };
-            
-            // update 대신 upsert 사용 (데이터가 없으면 생성, 있으면 수정)
             const { error } = await _supabase.from('config').upsert(up);
-            
             showLoading(false);
-            if(error) {
-                alert("저장 실패: " + error.message);
-            } else {
-                alert("시스템 설정이 저장되었습니다.");
-                location.reload();
-            }
+            if(error) alert("저장 실패: " + error.message);
+            else { alert("시스템 설정이 저장되었습니다."); location.reload(); }
         }
 
         function renderAdminCalendar() {
