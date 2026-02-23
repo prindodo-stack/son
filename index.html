@@ -510,9 +510,17 @@
                         document.getElementById('editTitle').value = config.main_title || '';
                         document.getElementById('editMax').value = config.max_count || 1;
                         document.getElementById('editForce').value = String(config.is_force_closed || false);
-                        const ft = (t) => (t && t.length >= 16) ? t.substring(0, 16).replace(' ', 'T') : '';
-                        document.getElementById('editStart').value = ft(config.app_start_time);
-                        document.getElementById('editEnd').value = ft(config.app_end_time);
+                        
+                        // 타임존을 고려하여 datetime-local 형식(YYYY-MM-DDTHH:mm)으로 변환하는 함수
+                        const formatForInput = (utcString) => {
+                            if (!utcString) return '';
+                            const d = new Date(utcString);
+                            const pad = (n) => String(n).padStart(2, '0');
+                            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                        };
+
+                        document.getElementById('editStart').value = formatForInput(config.app_start_time);
+                        document.getElementById('editEnd').value = formatForInput(config.app_end_time);
                         document.getElementById('editEduStart').value = config.edu_op_start || '';
                         document.getElementById('editEduEnd').value = config.edu_op_end || '';
                     }
