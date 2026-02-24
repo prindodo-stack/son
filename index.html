@@ -17,6 +17,7 @@
         .selected-2 { background-color: #60a5fa !important; color: white !important; }
         .blocked { background-color: #fee2e2; color: #ef4444; cursor: not-allowed; }
         .admin-blocked { background-color: #ef4444 !important; color: white !important; }
+        .admin-selected-to-block { background-color: #fecaca !important; color: #dc2626 !important; border: 2px solid #ef4444; }
         .full { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
         .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.85); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .radio-box:checked + label { border-color: #2563eb; background-color: #eff6ff; color: #1e40af; }
@@ -250,8 +251,8 @@
                             <div class="flex justify-between items-center border-b pb-2">
                                 <h3 class="font-bold">날짜 차단 설정</h3>
                                 <div class="flex space-x-1">
-                                    <button onclick="changeMonth(-1)" class="px-2 py-1 border rounded text-xs hover:bg-gray-100">&lt;</button>
-                                    <button onclick="changeMonth(1)" class="px-2 py-1 border rounded text-xs hover:bg-gray-100">&gt;</button>
+                                    <button onclick="adminChangeMonth(-1)" class="px-2 py-1 border rounded text-xs hover:bg-gray-100">&lt;</button>
+                                    <button onclick="adminChangeMonth(1)" class="px-2 py-1 border rounded text-xs hover:bg-gray-100">&gt;</button>
                                 </div>
                             </div>
                             <div class="bg-white border rounded-xl p-4 shadow-inner">
@@ -260,6 +261,10 @@
                                     <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
                                 </div>
                                 <div id="adminCalendarBody" class="grid grid-cols-7 gap-1"></div>
+                            </div>
+                            <div class="p-3 bg-red-50 rounded-lg border border-red-100 space-y-2">
+                                <p class="text-[11px] text-red-600 font-bold text-center">💡 날짜를 선택(빨간색)한 후 아래 버튼을 누르세요.</p>
+                                <button onclick="saveAdminBlockedDates()" class="w-full bg-red-600 text-white font-bold py-2 rounded text-sm hover:bg-red-700 shadow-sm">차단 설정 저장</button>
                             </div>
                         </div>
                     </div>
@@ -274,7 +279,8 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let config = null;
-        let blockedDates = [];
+        let blockedDates = []; // 실제 DB에 저장된 차단 날짜
+        let tempAdminBlockedDates = []; // 관리자 페이지에서 임시로 선택한 차단 날짜
         let dailyCountMap = {};
         let currentYear, currentMonth;
         let firstChoice = null, secondChoice = null;
@@ -313,6 +319,7 @@
 
                 config = cfgRes.data || { main_title: 'AI코딩 교실 신청 시스템', max_count: 1, is_force_closed: false };
                 blockedDates = blkRes.data ? blkRes.data.map(b => b.block_date) : [];
+                tempAdminBlockedDates = [...blockedDates]; // 임시 목록 초기화
                 
                 dailyCountMap = {};
                 if(appsRes.data) {
@@ -425,6 +432,15 @@
             if(!document.getElementById('adminPanel').classList.contains('hidden')) renderAdminCalendar();
         }
 
+        // 관리자 달력 전용 월 변경 함수 (확실한 작동을 위해 분리)
+        function adminChangeMonth(v) {
+            currentMonth += v;
+            if(currentMonth > 11) { currentMonth=0; currentYear++; }
+            if(currentMonth < 0) { currentMonth=11; currentYear--; }
+            renderCalendar();
+            renderAdminCalendar();
+        }
+
         function checkAppPeriod() {
             if(!config) return;
             const now = new Date();
@@ -511,7 +527,6 @@
                         document.getElementById('editMax').value = config.max_count || 1;
                         document.getElementById('editForce').value = String(config.is_force_closed || false);
                         
-                        // 타임존을 고려하여 datetime-local 형식(YYYY-MM-DDTHH:mm)으로 변환하는 함수
                         const formatForInput = (utcString) => {
                             if (!utcString) return '';
                             const d = new Date(utcString);
@@ -598,19 +613,54 @@
             for(let d=1; d<=last; d++) {
                 const ds = `${currentYear}-${String(currentMonth+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const div = document.createElement('div');
-                div.className = 'p-1 text-[10px] border rounded text-center cursor-pointer hover:bg-gray-100';
+                div.className = 'p-1 text-[10px] border rounded text-center cursor-pointer hover:bg-gray-100 transition';
                 div.innerText = d;
-                if(blockedDates.includes(ds)) div.classList.add('admin-blocked');
-                div.onclick = () => toggleBlock(ds);
+                
+                // 실제 차단 여부와 임시 선택 여부에 따라 클래스 부여
+                if(tempAdminBlockedDates.includes(ds)) {
+                    div.classList.add('admin-selected-to-block');
+                }
+                
+                div.onclick = () => toggleTempBlock(ds);
                 body.appendChild(div);
             }
         }
 
-        async function toggleBlock(date) {
+        // 일괄 선택을 위한 임시 토글 함수
+        function toggleTempBlock(date) {
+            if(tempAdminBlockedDates.includes(date)) {
+                tempAdminBlockedDates = tempAdminBlockedDates.filter(d => d !== date);
+            } else {
+                tempAdminBlockedDates.push(date);
+            }
+            renderAdminCalendar();
+        }
+
+        // 임시 선택된 날짜들을 한꺼번에 DB에 저장
+        async function saveAdminBlockedDates() {
+            if(!confirm("선택한 날짜들을 신청 차단 일정으로 반영하시겠습니까?")) return;
+            
             showLoading(true);
-            if(blockedDates.includes(date)) await _supabase.from('blocked_dates').delete().eq('block_date', date);
-            else await _supabase.from('blocked_dates').insert([{block_date: date}]);
-            await loadInitialData(); renderAdminCalendar(); renderCalendar(); showLoading(false);
+            try {
+                // 1. 기존 차단 날짜 모두 삭제 (가장 단순한 일괄 처리 방식)
+                await _supabase.from('blocked_dates').delete().neq('id', 0); 
+
+                // 2. 현재 임시 목록에 있는 날짜들 모두 삽입
+                if(tempAdminBlockedDates.length > 0) {
+                    const insertData = tempAdminBlockedDates.map(date => ({ block_date: date }));
+                    await _supabase.from('blocked_dates').insert(insertData);
+                }
+                
+                alert("차단 일정이 정상적으로 반영되었습니다.");
+                await loadInitialData(); // 실제 데이터 다시 불러오기
+                renderAdminCalendar();
+                renderCalendar();
+            } catch (e) {
+                console.error(e);
+                alert("저장 중 오류가 발생했습니다.");
+            } finally {
+                showLoading(false);
+            }
         }
 
         function exportToExcel() {
