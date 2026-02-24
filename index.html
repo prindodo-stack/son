@@ -257,14 +257,14 @@
                             </div>
                             <div class="bg-white border rounded-xl p-4 shadow-inner">
                                 <div id="adminCalendarHeader" class="text-center mb-2 font-bold text-sm"></div>
-                                <div class="grid grid-cols-7 gap-1 text-[10px] text-center mb-1 text-gray-400">
+                                <div class="calendar-grid text-[10px] text-center mb-1 text-gray-400">
                                     <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
                                 </div>
-                                <div id="adminCalendarBody" class="grid grid-cols-7 gap-1"></div>
+                                <div id="adminCalendarBody" class="calendar-grid gap-1"></div>
                             </div>
                             <div class="p-3 bg-red-50 rounded-lg border border-red-100 space-y-2">
                                 <p class="text-[11px] text-red-600 font-bold text-center">💡 날짜를 선택(빨간색)한 후 아래 버튼을 누르세요.</p>
-                                <button onclick="saveAdminBlockedDates()" class="w-full bg-red-600 text-white font-bold py-2 rounded text-sm hover:bg-red-700 shadow-sm">차단 설정 저장</button>
+                                <button onclick="saveAdminBlockedDates()" class="w-full bg-red-600 text-white font-bold py-2 rounded text-sm hover:bg-red-700 shadow-sm transition">차단 설정 저장</button>
                             </div>
                         </div>
                     </div>
@@ -279,8 +279,8 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let config = null;
-        let blockedDates = []; // 실제 DB에 저장된 차단 날짜
-        let tempAdminBlockedDates = []; // 관리자 페이지에서 임시로 선택한 차단 날짜
+        let blockedDates = []; 
+        let tempAdminBlockedDates = []; 
         let dailyCountMap = {};
         let currentYear, currentMonth;
         let firstChoice = null, secondChoice = null;
@@ -289,7 +289,6 @@
             showLoading(true);
             await loadInitialData();
             
-            // 교육 운영 시작일(신청 가능일 첫날) 기준으로 초기 달력 세팅
             if (config && config.edu_op_start) {
                 const startDate = new Date(config.edu_op_start);
                 currentYear = startDate.getFullYear();
@@ -319,7 +318,7 @@
 
                 config = cfgRes.data || { main_title: 'AI코딩 교실 신청 시스템', max_count: 1, is_force_closed: false };
                 blockedDates = blkRes.data ? blkRes.data.map(b => b.block_date) : [];
-                tempAdminBlockedDates = [...blockedDates]; // 임시 목록 초기화
+                tempAdminBlockedDates = [...blockedDates]; 
                 
                 dailyCountMap = {};
                 if(appsRes.data) {
@@ -334,7 +333,7 @@
                 document.getElementById('mainTitle').innerText = config.main_title || 'AI코딩 교실 신청 시스템';
                 document.getElementById('subTitle').innerText = config.sub_title || '-';
             } catch (e) {
-                console.error("Data Load Error:", e);
+                console.error("초기 데이터 로드 중 오류:", e);
             }
         }
 
@@ -365,6 +364,7 @@
 
         function renderCalendar() {
             const body = document.getElementById('calendarBody');
+            if (!body) return;
             document.getElementById('calendarTitle').innerText = `${currentYear}년 ${currentMonth+1}월`;
             body.innerHTML = '';
             
@@ -432,7 +432,6 @@
             if(!document.getElementById('adminPanel').classList.contains('hidden')) renderAdminCalendar();
         }
 
-        // 관리자 달력 전용 월 변경 함수 (확실한 작동을 위해 분리)
         function adminChangeMonth(v) {
             currentMonth += v;
             if(currentMonth > 11) { currentMonth=0; currentYear++; }
@@ -448,7 +447,10 @@
             if(config.app_start_time && now < new Date(config.app_start_time)) return lock("신청 기간이 아닙니다.");
             if(config.app_end_time && now > new Date(config.app_end_time)) return lock("신청이 종료되었습니다.");
         }
-        function lock(m) { document.getElementById('step1').innerHTML = `<div class="p-16 text-center text-red-500 font-bold bg-red-50 border rounded-xl">${m}</div>`; }
+        function lock(m) { 
+            const s1 = document.getElementById('step1');
+            if (s1) s1.innerHTML = `<div class="p-16 text-center text-red-500 font-bold bg-red-50 border rounded-xl">${m}</div>`; 
+        }
 
         function goToStep2() {
             if(!firstChoice || !secondChoice) return alert("1순위와 2순위 희망 날짜를 모두 선택해야 합니다.");
@@ -553,6 +555,7 @@
         async function loadAdminData() {
             const {data} = await _supabase.from('applications').select('*').order('created_at', {ascending:false});
             const tbody = document.getElementById('adminDataTable');
+            if (!tbody) return;
             tbody.innerHTML = '';
             document.getElementById('adminTotalCount').innerText = data ? data.length : 0;
             if(data) {
@@ -576,7 +579,7 @@
         }
 
         async function deleteApp(id) {
-            if(confirm("정말 삭제?")) {
+            if(confirm("정말 삭제하시겠습니까?")) {
                 await _supabase.from('applications').delete().eq('id', id);
                 await loadAdminData(); await loadInitialData(); renderCalendar();
             }
@@ -605,7 +608,10 @@
 
         function renderAdminCalendar() {
             const body = document.getElementById('adminCalendarBody');
-            document.getElementById('adminCalendarHeader').innerText = `${currentYear}년 ${currentMonth+1}월`;
+            const header = document.getElementById('adminCalendarHeader');
+            if (!body || !header) return;
+
+            header.innerText = `${currentYear}년 ${currentMonth+1}월`;
             body.innerHTML = '';
             const first = new Date(currentYear, currentMonth, 1).getDay();
             const last = new Date(currentYear, currentMonth+1, 0).getDate();
@@ -613,10 +619,9 @@
             for(let d=1; d<=last; d++) {
                 const ds = `${currentYear}-${String(currentMonth+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const div = document.createElement('div');
-                div.className = 'p-1 text-[10px] border rounded text-center cursor-pointer hover:bg-gray-100 transition';
+                div.className = 'p-1 text-[10px] border rounded text-center cursor-pointer hover:bg-gray-100 transition h-10 flex items-center justify-center';
                 div.innerText = d;
                 
-                // 실제 차단 여부와 임시 선택 여부에 따라 클래스 부여
                 if(tempAdminBlockedDates.includes(ds)) {
                     div.classList.add('admin-selected-to-block');
                 }
@@ -626,7 +631,6 @@
             }
         }
 
-        // 일괄 선택을 위한 임시 토글 함수
         function toggleTempBlock(date) {
             if(tempAdminBlockedDates.includes(date)) {
                 tempAdminBlockedDates = tempAdminBlockedDates.filter(d => d !== date);
@@ -636,23 +640,20 @@
             renderAdminCalendar();
         }
 
-        // 임시 선택된 날짜들을 한꺼번에 DB에 저장
         async function saveAdminBlockedDates() {
             if(!confirm("선택한 날짜들을 신청 차단 일정으로 반영하시겠습니까?")) return;
             
             showLoading(true);
             try {
-                // 1. 기존 차단 날짜 모두 삭제 (가장 단순한 일괄 처리 방식)
                 await _supabase.from('blocked_dates').delete().neq('id', 0); 
 
-                // 2. 현재 임시 목록에 있는 날짜들 모두 삽입
                 if(tempAdminBlockedDates.length > 0) {
                     const insertData = tempAdminBlockedDates.map(date => ({ block_date: date }));
                     await _supabase.from('blocked_dates').insert(insertData);
                 }
                 
                 alert("차단 일정이 정상적으로 반영되었습니다.");
-                await loadInitialData(); // 실제 데이터 다시 불러오기
+                await loadInitialData(); 
                 renderAdminCalendar();
                 renderCalendar();
             } catch (e) {
