@@ -26,13 +26,13 @@
 </head>
 <body class="p-4 md:p-8">
 
-    <!-- Loading Overlay -->
+    <!-- 로딩 오버레이 -->
     <div id="loading" class="loading-overlay flex flex-col">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         <p class="mt-4 font-semibold text-blue-600">처리 중...</p>
     </div>
 
-    <!-- Admin Password Modal -->
+    <!-- 관리자 비밀번호 모달 -->
     <div id="adminModal" class="modal-overlay">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-80 space-y-4 border">
             <h3 class="font-bold text-lg text-center">관리자 인증</h3>
@@ -47,13 +47,13 @@
     <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden relative">
         <button onclick="openAdminModal()" class="absolute top-4 right-4 text-gray-300 hover:text-gray-500 text-xs transition z-50">Admin</button>
 
-        <!-- Header -->
+        <!-- 헤더 -->
         <div class="bg-blue-600 p-8 text-white text-center">
             <h1 id="mainTitle" class="text-2xl md:text-3xl font-bold mb-2">로딩 중...</h1>
             <p id="subTitle" class="opacity-90">-</p>
         </div>
 
-        <!-- User Nav (Steps) -->
+        <!-- 네비게이션 -->
         <div id="userNav" class="flex border-b text-center font-semibold text-gray-500 text-xs md:text-sm">
             <div id="step1Tab" onclick="goToStep1()" class="flex-1 py-4 step-active cursor-pointer">1. 일정 선택</div>
             <div id="step2Tab" class="flex-1 py-4">2. 정보 입력</div>
@@ -98,11 +98,11 @@
                         <button onclick="goToStep1()" class="text-xs bg-gray-200 px-2 py-1 rounded">날짜변경</button>
                     </div>
                     <div class="flex gap-4">
-                        <div class="flex-1 text-center bg-white p-2 border rounded">
+                        <div class="flex-1 text-center bg-white p-2 border rounded shadow-sm">
                             <p class="text-[10px] text-gray-400">1순위</p>
                             <p id="confirmDate1" class="text-blue-600 font-bold"></p>
                         </div>
-                        <div class="flex-1 text-center bg-white p-2 border rounded">
+                        <div class="flex-1 text-center bg-white p-2 border rounded shadow-sm">
                             <p class="text-[10px] text-gray-400">2순위</p>
                             <p id="confirmDate2" class="text-blue-400 font-bold"></p>
                         </div>
@@ -190,7 +190,7 @@
                 <button onclick="location.reload()" class="bg-gray-800 text-white px-8 py-3 rounded-lg hover:bg-black transition">처음으로</button>
             </div>
 
-            <!-- STEP 4: 신청 결과 조회 및 수정 -->
+            <!-- STEP 4: 신청 결과 조회 및 수정/삭제 -->
             <div id="step4" class="hidden space-y-8">
                 <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 text-center space-y-4">
                     <h3 class="text-xl font-bold text-blue-900">신청 내역 확인</h3>
@@ -202,13 +202,13 @@
                     </div>
                 </div>
 
-                <!-- 4-1: 결과 목록 표시 (여러 개일 경우) -->
+                <!-- 4-1: 결과 목록 표시 -->
                 <div id="inquiryListSection" class="hidden space-y-4 animate-fade-in">
                     <h4 class="text-lg font-bold text-gray-800 flex items-center">
                          🔎 검색 결과 목록 <span id="searchResultCount" class="ml-2 text-sm text-blue-600 font-normal"></span>
                     </h4>
-                    <div class="overflow-hidden border rounded-xl bg-white shadow-sm">
-                        <table class="w-full text-left text-sm">
+                    <div class="overflow-hidden border rounded-xl bg-white shadow-sm overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-gray-50 border-b">
                                 <tr>
                                     <th class="p-3">학교명</th>
@@ -221,12 +221,12 @@
                     </div>
                 </div>
 
-                <!-- 4-2: 상세 정보 수정 폼 -->
+                <!-- 4-2: 상세 정보 수정/삭제 폼 -->
                 <div id="inquiryEditSection" class="hidden animate-fade-in space-y-6">
                     <div class="border-t pt-6">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="text-lg font-bold text-gray-800 flex items-center">
-                                <span class="bg-blue-600 w-2 h-6 mr-2 rounded"></span> 신청 상세 정보 및 수정
+                                <span class="bg-blue-600 w-2 h-6 mr-2 rounded"></span> 신청 상세 정보 및 관리
                             </h4>
                             <button onclick="backToSearchList()" class="text-sm bg-gray-100 px-3 py-1.5 rounded-lg border hover:bg-gray-200">목록으로</button>
                         </div>
@@ -307,7 +307,11 @@
                                 </div>
                             </div>
                         </div>
-                        <button onclick="updateMyApplication()" class="w-full mt-6 bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition shadow-lg">수정 내용 저장하기</button>
+
+                        <div class="flex flex-col md:flex-row gap-3 mt-8">
+                            <button onclick="updateMyApplication()" class="flex-[2] bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition shadow-lg">수정 내용 저장하기</button>
+                            <button onclick="deleteMyApplication(document.getElementById('editRecordId').value)" class="flex-1 bg-red-500 text-white font-bold py-4 rounded-xl hover:bg-red-600 transition shadow-lg">신청 내역 삭제하기</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -416,7 +420,7 @@
         let currentYear, currentMonth;
         let firstChoice = null, secondChoice = null;
         let currentAdminData = []; 
-        let searchedApplications = []; // 사용자가 조회한 여러 개의 신청 데이터
+        let searchedApplications = []; 
 
         window.onload = async () => {
             showLoading(true);
@@ -733,8 +737,9 @@
                         <div class="text-blue-600 font-bold">${app.first_choice}</div>
                         <div class="text-[11px] text-gray-400">2순위: ${app.second_choice || '-'}</div>
                     </td>
-                    <td class="p-3 text-center">
-                        <button onclick="selectApplicationForEdit(${idx})" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-blue-700 transition shadow-sm">수정하기</button>
+                    <td class="p-3 text-center flex flex-col md:flex-row gap-1 justify-center">
+                        <button onclick="selectApplicationForEdit(${idx})" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-blue-700 transition shadow-sm">수정</button>
+                        <button onclick="deleteMyApplication(${app.id})" class="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-red-600 transition shadow-sm">삭제</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -780,6 +785,7 @@
             document.getElementById('inquiryListSection').classList.remove('hidden');
         }
 
+        // 본인 신청 내역 수정 저장
         async function updateMyApplication() {
             const id = document.getElementById('editRecordId').value;
             const fields = ['editRegion', 'editSchoolName', 'editUserName', 'editPhone', 'editTeacherCount', 'editStudentCount'];
@@ -815,6 +821,22 @@
             }
         }
 
+        // 본인 신청 내역 삭제
+        async function deleteMyApplication(id) {
+            if(!confirm("해당 신청 내역을 정말 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.")) return;
+
+            showLoading(true);
+            const { error } = await _supabase.from('applications').delete().eq('id', id);
+            
+            showLoading(false);
+            if(error) alert("삭제 중 오류 발생: " + error.message);
+            else {
+                alert("신청 내역이 정상적으로 삭제되었습니다.");
+                // 데이터 갱신을 위해 현재 페이지 새로고침 (가장 확실한 방법)
+                location.reload();
+            }
+        }
+
         function switchAdminTab(t) {
             document.getElementById('adminStatusSection').style.display = t==='status' ? 'block' : 'none';
             document.getElementById('adminConfigSection').style.display = t==='config' ? 'block' : 'none';
@@ -841,14 +863,15 @@
                     <td class="p-3 text-blue-400 font-bold text-[11px]">${app.second_choice || '-'}</td>
                     <td class="p-3 text-center text-[11px]"><span class="font-bold">${app.teacher_count || 0}</span> / <span class="text-gray-500">${app.student_count || 0}</span></td>
                     <td class="p-3 text-[11px]">${app.bus_needed === '유' ? `<span class='text-blue-500 font-bold'>운영(${app.bus_type})</span>` : '미운영'}</td>
-                    <td class="p-3 text-center"><button onclick="deleteApp(${app.id})" class="text-red-400 hover:underline">삭제</button></td>
+                    <td class="p-3 text-center"><button onclick="deleteApp(${app.id})" class="text-red-400 hover:underline text-xs">삭제</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
+        // 관리자용 삭제 함수 (사용자용과 로직은 비슷하지만 경로 명확화)
         async function deleteApp(id) {
-            if(confirm("정말 삭제하시겠습니까?")) {
+            if(confirm("관리자 권한으로 정말 삭제하시겠습니까?")) {
                 await _supabase.from('applications').delete().eq('id', id);
                 await refreshAdminData();
                 renderCalendar();
