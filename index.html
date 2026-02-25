@@ -21,6 +21,7 @@
         .full { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
         .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.85); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .radio-box:checked + label { border-color: #2563eb; background-color: #eff6ff; color: #1e40af; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -30,16 +31,25 @@
         <p class="mt-4 font-semibold text-blue-600">처리 중...</p>
     </div>
 
-    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden relative">
-        <button onclick="toggleAdmin()" class="absolute top-4 right-4 text-gray-300 hover:text-gray-500 text-xs transition z-50">Admin</button>
+    <div id="adminModal" class="modal-overlay">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-80 space-y-4 border">
+            <h3 class="font-bold text-lg text-center">관리자 인증</h3>
+            <input type="password" id="adminPwInput" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="비밀번호 입력">
+            <div class="flex gap-2">
+                <button onclick="closeAdminModal()" class="flex-1 bg-gray-200 py-2 rounded-lg font-semibold">취소</button>
+                <button onclick="checkAdminPassword()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold">확인</button>
+            </div>
+        </div>
+    </div>
 
-        <!-- Header -->
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden relative">
+        <button onclick="openAdminModal()" class="absolute top-4 right-4 text-gray-300 hover:text-gray-500 text-xs transition z-50">Admin</button>
+
         <div class="bg-blue-600 p-8 text-white text-center">
             <h1 id="mainTitle" class="text-2xl md:text-3xl font-bold mb-2">로딩 중...</h1>
             <p id="subTitle" class="opacity-90">-</p>
         </div>
 
-        <!-- User Nav (Steps) -->
         <div id="userNav" class="flex border-b text-center font-semibold text-gray-500">
             <div id="step1Tab" class="flex-1 py-4 step-active">1. 일정 선택</div>
             <div id="step2Tab" class="flex-1 py-4">2. 정보 입력</div>
@@ -47,7 +57,6 @@
         </div>
 
         <div class="p-6 md:p-10">
-            <!-- STEP 1: 일정 선택 -->
             <div id="step1" class="space-y-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-gray-800">교육 희망일 선택 <span class="text-sm font-normal text-gray-500 ml-2">(1, 2순위 모두 선택 필수)</span></h3>
@@ -75,7 +84,6 @@
                 <button onclick="goToStep2()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg">다음 단계로 (정보 입력)</button>
             </div>
 
-            <!-- STEP 2: 정보 입력 -->
             <div id="step2" class="hidden space-y-6">
                 <div class="bg-gray-50 p-4 rounded-lg mb-6 border">
                     <div class="flex justify-between items-center mb-2">
@@ -127,14 +135,8 @@
                     <div><label class="block text-sm font-semibold text-gray-700 mb-1">연락처</label><input type="text" id="phone" oninput="autoHyphen(this)" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="010-0000-0000"></div>
                     <div><label class="block text-sm font-semibold text-gray-700 mb-1">직위</label><input type="text" id="position" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: 교사"></div>
                     
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">참석교사 수(명)</label>
-                        <input type="number" id="teacherCount" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="숫자만 입력">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">참여 학생수(명)</label>
-                        <input type="number" id="studentCount" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="숫자만 입력">
-                    </div>
+                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">참석교사 수(명)</label><input type="number" id="teacherCount" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="숫자만 입력"></div>
+                    <div><label class="block text-sm font-semibold text-gray-700 mb-1">참여 학생수(명)</label><input type="number" id="studentCount" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="숫자만 입력"></div>
                 </div>
 
                 <div class="p-5 border rounded-xl bg-gray-50 space-y-4">
@@ -169,7 +171,6 @@
                 <button onclick="submitApplication()" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition shadow-lg">신청 완료하기</button>
             </div>
 
-            <!-- STEP 3: 신청 완료 -->
             <div id="step3" class="hidden text-center py-16">
                 <div class="mb-6 flex justify-center">
                     <div class="bg-green-100 p-4 rounded-full">
@@ -185,7 +186,7 @@
             <div id="adminPanel" class="hidden space-y-8">
                 <div class="flex justify-between items-center border-b pb-4">
                     <h2 class="text-xl font-bold">⚙️ 관리자 시스템 제어</h2>
-                    <button onclick="location.reload()" class="text-sm text-blue-600 font-bold underline">사용자 화면으로</button>
+                    <button onclick="location.reload()" class="text-sm text-blue-600 font-bold underline text-[11px]">사용자 화면으로</button>
                 </div>
 
                 <div class="flex space-x-4 border-b">
@@ -193,15 +194,19 @@
                     <button onclick="switchAdminTab('config')" id="tabConfig" class="pb-2 border-b-2 border-transparent text-gray-400 font-bold">시스템 설정/차단일</button>
                 </div>
 
-                <!-- Admin Section: Status -->
                 <div id="adminStatusSection" class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm font-bold">총 신청: <span id="adminTotalCount">0</span>건</span>
-                        <button onclick="exportToExcel()" class="bg-green-600 text-white px-3 py-1 rounded text-sm">엑셀 다운로드</button>
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-bold text-gray-700">총 신청: <span id="adminTotalCount" class="text-blue-600">0</span>건</span>
+                            <button onclick="refreshAdminData()" class="p-1 hover:bg-gray-200 rounded-full transition" title="데이터 새로고침">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            </button>
+                        </div>
+                        <button onclick="exportToExcel()" class="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-green-700 shadow-sm transition">엑셀 다운로드</button>
                     </div>
-                    <div class="overflow-x-auto border rounded-xl">
+                    <div class="overflow-x-auto border rounded-xl shadow-inner">
                         <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gray-100 border-b text-[12px]">
                                 <tr>
                                     <th class="p-3">일시</th>
                                     <th class="p-3">학교급/지역</th>
@@ -211,7 +216,7 @@
                                     <th class="p-3">희망일(2순위)</th>
                                     <th class="p-3">교사/학생</th>
                                     <th class="p-3">차량정보</th>
-                                    <th class="p-3">관리</th>
+                                    <th class="p-3 text-center">관리</th>
                                 </tr>
                             </thead>
                             <tbody id="adminDataTable"></tbody>
@@ -219,34 +224,30 @@
                     </div>
                 </div>
 
-                <!-- Admin Section: Config -->
                 <div id="adminConfigSection" class="hidden space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="bg-gray-50 p-6 rounded-xl space-y-4 border">
-                            <h3 class="font-bold border-b pb-2">시스템 설정 변경 (서울 시간 기준)</h3>
-                            <div><label class="text-xs font-bold text-gray-500">메인 타이틀</label><input type="text" id="editTitle" class="w-full p-2 border rounded mt-1 text-sm"></div>
-                            
+                            <h3 class="font-bold border-b pb-2">시스템 설정 변경</h3>
+                            <div><label class="text-xs font-bold text-gray-500">메인 타이틀</label><input type="text" id="editTitle" class="w-full p-2 border rounded mt-1 text-sm outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div class="grid grid-cols-2 gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
                                 <div class="col-span-2 text-xs font-bold text-blue-700 mb-1">📅 교육 운영 기간</div>
-                                <div><label class="text-[10px] text-gray-500">시작일</label><input type="date" id="editEduStart" class="w-full p-2 border rounded mt-1 text-sm"></div>
-                                <div><label class="text-[10px] text-gray-500">종료일</label><input type="date" id="editEduEnd" class="w-full p-2 border rounded mt-1 text-sm"></div>
+                                <div><label class="text-[10px] text-gray-500">시작일</label><input type="date" id="editEduStart" class="w-full p-2 border rounded mt-1 text-sm outline-none"></div>
+                                <div><label class="text-[10px] text-gray-500">종료일</label><input type="date" id="editEduEnd" class="w-full p-2 border rounded mt-1 text-sm outline-none"></div>
                             </div>
-
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-xs font-bold text-gray-500">날짜별 제한팀수</label><input type="number" id="editMax" class="w-full p-2 border rounded mt-1 text-sm"></div>
+                                <div><label class="text-xs font-bold text-gray-500">날짜별 제한팀수</label><input type="number" id="editMax" class="w-full p-2 border rounded mt-1 text-sm outline-none"></div>
                                 <div><label class="text-xs font-bold text-gray-500">강제마감 여부</label>
-                                    <select id="editForce" class="w-full p-2 border rounded mt-1 text-sm">
+                                    <select id="editForce" class="w-full p-2 border rounded mt-1 text-sm outline-none">
                                         <option value="false">정상 모집</option><option value="true">강제 마감</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-xs font-bold text-gray-500">신청 시작(시간)</label><input type="datetime-local" id="editStart" class="w-full p-2 border rounded mt-1 text-sm"></div>
-                                <div><label class="text-xs font-bold text-gray-500">신청 종료(시간)</label><input type="datetime-local" id="editEnd" class="w-full p-2 border rounded mt-1 text-sm"></div>
+                                <div><label class="text-xs font-bold text-gray-500">신청 시작(시간)</label><input type="datetime-local" id="editStart" class="w-full p-2 border rounded mt-1 text-sm outline-none"></div>
+                                <div><label class="text-xs font-bold text-gray-500">신청 종료(시간)</label><input type="datetime-local" id="editEnd" class="w-full p-2 border rounded mt-1 text-sm outline-none"></div>
                             </div>
-                            <button onclick="saveConfig()" class="w-full bg-blue-600 text-white font-bold py-2 rounded">설정 저장</button>
+                            <button onclick="saveConfig()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg shadow hover:bg-blue-700 transition">설정 저장</button>
                         </div>
-                        
                         <div class="space-y-4">
                             <div class="flex justify-between items-center border-b pb-2">
                                 <h3 class="font-bold">날짜 차단 설정</h3>
@@ -264,7 +265,7 @@
                             </div>
                             <div class="p-3 bg-red-50 rounded-lg border border-red-100 space-y-2">
                                 <p class="text-[11px] text-red-600 font-bold text-center">💡 날짜를 선택(빨간색)한 후 아래 버튼을 누르세요.</p>
-                                <button onclick="saveAdminBlockedDates()" class="w-full bg-red-600 text-white font-bold py-2 rounded text-sm hover:bg-red-700 shadow-sm transition">차단 설정 저장</button>
+                                <button onclick="saveAdminBlockedDates()" class="w-full bg-red-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-red-700 shadow-sm transition">차단 설정 저장</button>
                             </div>
                         </div>
                     </div>
@@ -284,11 +285,11 @@
         let dailyCountMap = {};
         let currentYear, currentMonth;
         let firstChoice = null, secondChoice = null;
+        let currentAdminData = []; // 엑셀용 원본 데이터 저장용
 
         window.onload = async () => {
             showLoading(true);
             await loadInitialData();
-            
             if (config && config.edu_op_start) {
                 const startDate = new Date(config.edu_op_start);
                 currentYear = startDate.getFullYear();
@@ -302,7 +303,6 @@
                 currentYear = now.getFullYear();
                 currentMonth = now.getMonth();
             }
-
             renderCalendar();
             checkAppPeriod();
             showLoading(false);
@@ -315,11 +315,9 @@
                     _supabase.from('blocked_dates').select('block_date'),
                     _supabase.from('applications').select('first_choice')
                 ]);
-
                 config = cfgRes.data || { main_title: 'AI코딩 교실 신청 시스템', max_count: 1, is_force_closed: false };
                 blockedDates = blkRes.data ? blkRes.data.map(b => b.block_date) : [];
                 tempAdminBlockedDates = [...blockedDates]; 
-                
                 dailyCountMap = {};
                 if(appsRes.data) {
                     appsRes.data.forEach(a => {
@@ -329,15 +327,59 @@
                         }
                     });
                 }
-
                 document.getElementById('mainTitle').innerText = config.main_title || 'AI코딩 교실 신청 시스템';
                 document.getElementById('subTitle').innerText = config.sub_title || '-';
-            } catch (e) {
-                console.error("초기 데이터 로드 중 오류:", e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
+
+        function openAdminModal() {
+            document.getElementById('adminModal').style.display = 'flex';
+            document.getElementById('adminPwInput').value = '';
+            document.getElementById('adminPwInput').focus();
+        }
+
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
+
+        async function checkAdminPassword() {
+            const pw = document.getElementById('adminPwInput').value;
+            if (pw === "1416") { closeAdminModal(); enterAdminMode(); } 
+            else { alert("비밀번호가 올바르지 않습니다."); }
+        }
+
+        async function enterAdminMode() {
+            try {
+                document.getElementById('userNav').classList.add('hidden');
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+                await loadAdminData();
+                renderAdminCalendar();
+                if(config) {
+                    document.getElementById('editTitle').value = config.main_title || '';
+                    document.getElementById('editMax').value = config.max_count || 1;
+                    document.getElementById('editForce').value = String(config.is_force_closed || false);
+                    const formatForInput = (utcString) => {
+                        if (!utcString) return '';
+                        const d = new Date(utcString);
+                        const pad = (n) => String(n).padStart(2, '0');
+                        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                    };
+                    document.getElementById('editStart').value = formatForInput(config.app_start_time);
+                    document.getElementById('editEnd').value = formatForInput(config.app_end_time);
+                    document.getElementById('editEduStart').value = config.edu_op_start || '';
+                    document.getElementById('editEduEnd').value = config.edu_op_end || '';
+                }
+            } catch (e) { alert("관리자 로딩 오류"); }
+        }
+
+        async function refreshAdminData() {
+            showLoading(true);
+            await Promise.all([loadAdminData(), loadInitialData()]);
+            renderAdminCalendar();
+            showLoading(false);
+        }
 
         function toggleBusType(show) {
             const section = document.getElementById('busTypeSection');
@@ -367,58 +409,39 @@
             if (!body) return;
             document.getElementById('calendarTitle').innerText = `${currentYear}년 ${currentMonth+1}월`;
             body.innerHTML = '';
-            
             const first = new Date(currentYear, currentMonth, 1).getDay();
             const last = new Date(currentYear, currentMonth+1, 0).getDate();
-
             const opStart = (config && config.edu_op_start) ? new Date(config.edu_op_start) : null;
             const opEnd = (config && config.edu_op_end) ? new Date(config.edu_op_end) : null;
-
             for(let i=0; i<first; i++) body.appendChild(Object.assign(document.createElement('div'), {className:'day-cell bg-gray-50'}));
-
             for(let d=1; d<=last; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const div = document.createElement('div');
                 div.className = 'day-cell p-2 text-sm flex flex-col justify-between relative';
-                
                 let badge = "";
                 if (firstChoice === dateStr) badge = "<span class='absolute top-1 right-1 bg-white text-blue-600 text-[10px] px-1 rounded-full border border-blue-600 font-bold'>1순위</span>";
                 if (secondChoice === dateStr) badge = "<span class='absolute top-1 right-1 bg-white text-blue-400 text-[10px] px-1 rounded-full border border-blue-400 font-bold'>2순위</span>";
-                
                 div.innerHTML = `<span class="font-bold">${d}</span>${badge}`;
-
                 const thisDate = new Date(dateStr);
                 const count = dailyCountMap[dateStr] || 0;
                 const isBlocked = blockedDates.includes(dateStr);
                 const isWeekend = [0, 6].includes(thisDate.getDay());
-                
                 let isOutRange = false;
                 if(opStart && thisDate < opStart) isOutRange = true;
                 if(opEnd && thisDate > opEnd) isOutRange = true;
-
                 const tag = document.createElement('span');
                 tag.className = 'text-[9px] font-bold py-0.5 px-1 rounded text-center';
-
-                if(isOutRange) {
-                    div.classList.add('bg-gray-100', 'text-gray-300', 'cursor-not-allowed');
-                    tag.innerText = "비운영";
-                } else if(isBlocked || isWeekend) {
-                    div.classList.add('blocked');
-                    tag.innerText = "불가";
-                } else if(config && count >= config.max_count) {
-                    div.classList.add('full');
-                    tag.innerText = "마감";
-                    tag.classList.add('bg-gray-200');
-                } else {
+                if(isOutRange) { div.classList.add('bg-gray-100', 'text-gray-300', 'cursor-not-allowed'); tag.innerText = "비운영"; } 
+                else if(isBlocked || isWeekend) { div.classList.add('blocked'); tag.innerText = "불가"; } 
+                else if(config && count >= config.max_count) { div.classList.add('full'); tag.innerText = "마감"; tag.classList.add('bg-gray-200'); } 
+                else {
                     div.classList.add('cursor-pointer');
                     tag.innerText = config ? `가능(${config.max_count-count})` : '가능';
                     tag.classList.add('bg-blue-100', 'text-blue-600');
                     div.onclick = () => handleDateClick(dateStr);
                 }
-
                 if(firstChoice === dateStr) div.classList.add('selected-1');
                 else if(secondChoice === dateStr) div.classList.add('selected-2');
-
                 div.appendChild(tag);
                 body.appendChild(div);
             }
@@ -472,7 +495,6 @@
         async function submitApplication() {
             const fields = ['region', 'schoolName','userName','phone','studentCount', 'teacherCount'];
             if(!fields.every(id => document.getElementById(id).value.trim())) return alert("모든 필수 정보를 입력해주세요.");
-            
             const schoolLevel = document.querySelector('input[name="schoolLevel"]:checked').value;
             const busNeeded = document.querySelector('input[name="busNeeded"]:checked').value;
             let busType = "해당없음";
@@ -488,7 +510,6 @@
                 alert("1순위 날짜가 그새 마감되었습니다.");
                 return goToStep1();
             }
-            
             const {error} = await _supabase.from('applications').insert([{
                 region: document.getElementById('region').value,
                 school_level: schoolLevel,
@@ -503,7 +524,6 @@
                 bus_needed: busNeeded,
                 bus_type: busType
             }]);
-            
             showLoading(false);
             if(error) alert("오류: " + error.message);
             else {
@@ -512,37 +532,6 @@
                 document.getElementById('step2Tab').classList.remove('step-active');
                 document.getElementById('step3Tab').classList.add('step-active');
             }
-        }
-
-        async function toggleAdmin() {
-            const p = prompt("Password?");
-            if(p === "1416") {
-                try {
-                    document.getElementById('userNav').classList.add('hidden');
-                    document.getElementById('step1').classList.add('hidden');
-                    document.getElementById('step2').classList.add('hidden');
-                    document.getElementById('adminPanel').classList.remove('hidden');
-                    await loadAdminData();
-                    renderAdminCalendar();
-                    if(config) {
-                        document.getElementById('editTitle').value = config.main_title || '';
-                        document.getElementById('editMax').value = config.max_count || 1;
-                        document.getElementById('editForce').value = String(config.is_force_closed || false);
-                        
-                        const formatForInput = (utcString) => {
-                            if (!utcString) return '';
-                            const d = new Date(utcString);
-                            const pad = (n) => String(n).padStart(2, '0');
-                            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-                        };
-
-                        document.getElementById('editStart').value = formatForInput(config.app_start_time);
-                        document.getElementById('editEnd').value = formatForInput(config.app_end_time);
-                        document.getElementById('editEduStart').value = config.edu_op_start || '';
-                        document.getElementById('editEduEnd').value = config.edu_op_end || '';
-                    }
-                } catch (e) { alert("관리자 로딩 오류"); }
-            } else if (p !== null) alert("비밀번호 틀림");
         }
 
         function switchAdminTab(t) {
@@ -554,34 +543,34 @@
 
         async function loadAdminData() {
             const {data} = await _supabase.from('applications').select('*').order('created_at', {ascending:false});
+            currentAdminData = data || [];
             const tbody = document.getElementById('adminDataTable');
             if (!tbody) return;
             tbody.innerHTML = '';
-            document.getElementById('adminTotalCount').innerText = data ? data.length : 0;
-            if(data) {
-                data.forEach(app => {
-                    const tr = document.createElement('tr');
-                    const cStr = app.created_at ? new Date(app.created_at).toLocaleString('ko-KR') : '-';
-                    tr.innerHTML = `
-                        <td class="p-3 text-[10px]">${cStr}</td>
-                        <td class="p-3"><span class="bg-gray-100 px-1 rounded font-bold">${app.school_level || '-'}</span> ${app.region || '-'}</td>
-                        <td class="p-3 font-bold">${app.user_name || '-'}<br><span class="text-gray-400 font-normal text-[11px]">${app.school_name || '-'}</span></td>
-                        <td class="p-3">${app.phone || '-'}</td>
-                        <td class="p-3 text-blue-600 font-bold text-[11px]">${app.first_choice}</td>
-                        <td class="p-3 text-blue-400 font-bold text-[11px]">${app.second_choice || '-'}</td>
-                        <td class="p-3 text-center text-[11px]"><span class="font-bold">${app.teacher_count || 0}</span> / <span class="text-gray-500">${app.student_count || 0}</span></td>
-                        <td class="p-3 text-[11px]">${app.bus_needed === '유' ? `<span class='text-blue-500 font-bold'>운영(${app.bus_type})</span>` : '미운영'}</td>
-                        <td class="p-3"><button onclick="deleteApp(${app.id})" class="text-red-400 hover:underline">삭제</button></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
+            document.getElementById('adminTotalCount').innerText = currentAdminData.length;
+            currentAdminData.forEach(app => {
+                const tr = document.createElement('tr');
+                const cStr = app.created_at ? new Date(app.created_at).toLocaleString('ko-KR') : '-';
+                tr.innerHTML = `
+                    <td class="p-3 text-[10px] text-gray-500">${cStr}</td>
+                    <td class="p-3"><span class="bg-gray-100 px-1 rounded font-bold">${app.school_level || '-'}</span> ${app.region || '-'}</td>
+                    <td class="p-3 font-bold">${app.user_name || '-'}<br><span class="text-gray-400 font-normal text-[11px]">${app.school_name || '-'}</span></td>
+                    <td class="p-3 text-gray-600">${app.phone || '-'}</td>
+                    <td class="p-3 text-blue-600 font-bold text-[11px]">${app.first_choice}</td>
+                    <td class="p-3 text-blue-400 font-bold text-[11px]">${app.second_choice || '-'}</td>
+                    <td class="p-3 text-center text-[11px]"><span class="font-bold">${app.teacher_count || 0}</span> / <span class="text-gray-500">${app.student_count || 0}</span></td>
+                    <td class="p-3 text-[11px]">${app.bus_needed === '유' ? `<span class='text-blue-500 font-bold'>운영(${app.bus_type})</span>` : '미운영'}</td>
+                    <td class="p-3 text-center"><button onclick="deleteApp(${app.id})" class="text-red-400 hover:underline">삭제</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         async function deleteApp(id) {
             if(confirm("정말 삭제하시겠습니까?")) {
                 await _supabase.from('applications').delete().eq('id', id);
-                await loadAdminData(); await loadInitialData(); renderCalendar();
+                await refreshAdminData();
+                renderCalendar();
             }
         }
 
@@ -589,7 +578,6 @@
             showLoading(true);
             const startTime = document.getElementById('editStart').value ? document.getElementById('editStart').value + ":00+09:00" : null;
             const endTime = document.getElementById('editEnd').value ? document.getElementById('editEnd').value + ":00+09:00" : null;
-
             const up = {
                 id: 1,
                 main_title: document.getElementById('editTitle').value,
@@ -610,7 +598,6 @@
             const body = document.getElementById('adminCalendarBody');
             const header = document.getElementById('adminCalendarHeader');
             if (!body || !header) return;
-
             header.innerText = `${currentYear}년 ${currentMonth+1}월`;
             body.innerHTML = '';
             const first = new Date(currentYear, currentMonth, 1).getDay();
@@ -621,58 +608,78 @@
                 const div = document.createElement('div');
                 div.className = 'p-1 text-[10px] border rounded text-center cursor-pointer hover:bg-gray-100 transition h-10 flex items-center justify-center';
                 div.innerText = d;
-                
-                if(tempAdminBlockedDates.includes(ds)) {
-                    div.classList.add('admin-selected-to-block');
-                }
-                
+                if(tempAdminBlockedDates.includes(ds)) div.classList.add('admin-selected-to-block');
                 div.onclick = () => toggleTempBlock(ds);
                 body.appendChild(div);
             }
         }
 
         function toggleTempBlock(date) {
-            if(tempAdminBlockedDates.includes(date)) {
-                tempAdminBlockedDates = tempAdminBlockedDates.filter(d => d !== date);
-            } else {
-                tempAdminBlockedDates.push(date);
-            }
+            if(tempAdminBlockedDates.includes(date)) tempAdminBlockedDates = tempAdminBlockedDates.filter(d => d !== date);
+            else tempAdminBlockedDates.push(date);
             renderAdminCalendar();
         }
 
         async function saveAdminBlockedDates() {
             if(!confirm("선택한 날짜들을 신청 차단 일정으로 반영하시겠습니까?")) return;
-            
             showLoading(true);
             try {
                 await _supabase.from('blocked_dates').delete().neq('id', 0); 
-
                 if(tempAdminBlockedDates.length > 0) {
                     const insertData = tempAdminBlockedDates.map(date => ({ block_date: date }));
                     await _supabase.from('blocked_dates').insert(insertData);
                 }
-                
                 alert("차단 일정이 정상적으로 반영되었습니다.");
                 await loadInitialData(); 
                 renderAdminCalendar();
                 renderCalendar();
-            } catch (e) {
-                console.error(e);
-                alert("저장 중 오류가 발생했습니다.");
-            } finally {
-                showLoading(false);
-            }
+            } catch (e) { alert("저장 중 오류가 발생했습니다."); } 
+            finally { showLoading(false); }
         }
 
+        // 엑셀 다운로드: 원본 데이터를 사용하여 각 항목을 독립된 열로 분리
         function exportToExcel() {
-            const table = document.getElementById('adminDataTable').parentElement;
-            const ws = XLSX.utils.table_to_sheet(table);
+            if (!currentAdminData || currentAdminData.length === 0) {
+                alert("다운로드할 데이터가 없습니다.");
+                return;
+            }
+            
             const wb = XLSX.utils.book_new();
+            // 요청된 열 순서대로 헤더 정의
+            const header = ["일시", "학교급", "지역", "학교", "이름", "연락처", "희망일(1순위)", "희망일(2순위)", "교사", "학생", "차량정보"];
+            
+            const rows = currentAdminData.map(app => [
+                app.created_at ? new Date(app.created_at).toLocaleString('ko-KR') : '-',
+                app.school_level || '-',
+                app.region || '-',
+                app.school_name || '-',
+                app.user_name || '-',
+                app.phone || '-',
+                app.first_choice || '-',
+                app.second_choice || '-',
+                app.teacher_count || 0,
+                app.student_count || 0,
+                app.bus_needed === '유' ? `운영(${app.bus_type})` : '미운영'
+            ]);
+
+            const data = [header, ...rows];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+
+            // 숫자가 날짜로 변환되는 것을 방지하기 위해 모든 셀을 텍스트(string) 타입으로 강제 지정
+            Object.keys(ws).forEach(key => {
+                if (key[0] === '!') return; // 메타데이터 제외
+                ws[key].t = 's';
+            });
+
             XLSX.utils.book_append_sheet(wb, ws, "신청현황");
             XLSX.writeFile(wb, `신청현황_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
         function autoHyphen(t) { t.value = t.value.replace(/[^0-9]/g, '').replace(/^(\d{2,3})(\d{3,4})(\d{4})$/, `$1-$2-$3`); }
+        
+        document.getElementById('adminPwInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkAdminPassword();
+        });
     </script>
 </body>
 </html>
