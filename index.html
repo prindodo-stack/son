@@ -26,11 +26,13 @@
 </head>
 <body class="p-4 md:p-8">
 
+    <!-- Loading Overlay -->
     <div id="loading" class="loading-overlay flex flex-col">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         <p class="mt-4 font-semibold text-blue-600">처리 중...</p>
     </div>
 
+    <!-- Admin Password Modal -->
     <div id="adminModal" class="modal-overlay">
         <div class="bg-white p-6 rounded-2xl shadow-xl w-80 space-y-4 border">
             <h3 class="font-bold text-lg text-center">관리자 인증</h3>
@@ -45,18 +47,22 @@
     <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden relative">
         <button onclick="openAdminModal()" class="absolute top-4 right-4 text-gray-300 hover:text-gray-500 text-xs transition z-50">Admin</button>
 
+        <!-- Header -->
         <div class="bg-blue-600 p-8 text-white text-center">
             <h1 id="mainTitle" class="text-2xl md:text-3xl font-bold mb-2">로딩 중...</h1>
             <p id="subTitle" class="opacity-90">-</p>
         </div>
 
-        <div id="userNav" class="flex border-b text-center font-semibold text-gray-500">
-            <div id="step1Tab" class="flex-1 py-4 step-active">1. 일정 선택</div>
+        <!-- User Nav (Steps) -->
+        <div id="userNav" class="flex border-b text-center font-semibold text-gray-500 text-xs md:text-sm">
+            <div id="step1Tab" onclick="goToStep1()" class="flex-1 py-4 step-active cursor-pointer">1. 일정 선택</div>
             <div id="step2Tab" class="flex-1 py-4">2. 정보 입력</div>
             <div id="step3Tab" class="flex-1 py-4">3. 신청 완료</div>
+            <div id="step4Tab" onclick="goToStep4()" class="flex-1 py-4 cursor-pointer">4. 신청 결과 조회</div>
         </div>
 
         <div class="p-6 md:p-10">
+            <!-- STEP 1: 일정 선택 -->
             <div id="step1" class="space-y-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-gray-800">교육 희망일 선택 <span class="text-sm font-normal text-gray-500 ml-2">(1, 2순위 모두 선택 필수)</span></h3>
@@ -84,6 +90,7 @@
                 <button onclick="goToStep2()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg">다음 단계로 (정보 입력)</button>
             </div>
 
+            <!-- STEP 2: 정보 입력 -->
             <div id="step2" class="hidden space-y-6">
                 <div class="bg-gray-50 p-4 rounded-lg mb-6 border">
                     <div class="flex justify-between items-center mb-2">
@@ -171,6 +178,7 @@
                 <button onclick="submitApplication()" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition shadow-lg">신청 완료하기</button>
             </div>
 
+            <!-- STEP 3: 신청 완료 -->
             <div id="step3" class="hidden text-center py-16">
                 <div class="mb-6 flex justify-center">
                     <div class="bg-green-100 p-4 rounded-full">
@@ -180,6 +188,128 @@
                 <h2 class="text-3xl font-bold text-gray-800 mb-2">신청이 접수되었습니다!</h2>
                 <p class="text-gray-500 mb-8">관리자 승인 후 개별 안내 드립니다.</p>
                 <button onclick="location.reload()" class="bg-gray-800 text-white px-8 py-3 rounded-lg hover:bg-black transition">처음으로</button>
+            </div>
+
+            <!-- STEP 4: 신청 결과 조회 및 수정 -->
+            <div id="step4" class="hidden space-y-8">
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 text-center space-y-4">
+                    <h3 class="text-xl font-bold text-blue-900">신청 내역 확인</h3>
+                    <p class="text-sm text-blue-600">신청 시 입력했던 성함과 연락처를 입력해주세요.</p>
+                    <div class="max-w-xs mx-auto space-y-3">
+                        <input type="text" id="searchName" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="성함 입력">
+                        <input type="text" id="searchPhone" oninput="autoHyphen(this)" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="연락처 입력 (010-0000-0000)">
+                        <button onclick="searchMyApplication()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md">조회하기</button>
+                    </div>
+                </div>
+
+                <!-- 4-1: 결과 목록 표시 (여러 개일 경우) -->
+                <div id="inquiryListSection" class="hidden space-y-4 animate-fade-in">
+                    <h4 class="text-lg font-bold text-gray-800 flex items-center">
+                         🔎 검색 결과 목록 <span id="searchResultCount" class="ml-2 text-sm text-blue-600 font-normal"></span>
+                    </h4>
+                    <div class="overflow-hidden border rounded-xl bg-white shadow-sm">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-50 border-b">
+                                <tr>
+                                    <th class="p-3">학교명</th>
+                                    <th class="p-3">희망일(1순위)</th>
+                                    <th class="p-3 text-center">작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="searchResultListBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4-2: 상세 정보 수정 폼 -->
+                <div id="inquiryEditSection" class="hidden animate-fade-in space-y-6">
+                    <div class="border-t pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-lg font-bold text-gray-800 flex items-center">
+                                <span class="bg-blue-600 w-2 h-6 mr-2 rounded"></span> 신청 상세 정보 및 수정
+                            </h4>
+                            <button onclick="backToSearchList()" class="text-sm bg-gray-100 px-3 py-1.5 rounded-lg border hover:bg-gray-200">목록으로</button>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-xl mb-6 border grid grid-cols-2 gap-4">
+                            <div class="text-center bg-white p-2 border rounded shadow-sm">
+                                <p class="text-[10px] text-gray-400">1순위 희망일</p>
+                                <p id="viewDate1" class="text-blue-600 font-bold"></p>
+                            </div>
+                            <div class="text-center bg-white p-2 border rounded shadow-sm">
+                                <p class="text-[10px] text-gray-400">2순위 희망일</p>
+                                <p id="viewDate2" class="text-blue-400 font-bold"></p>
+                            </div>
+                            <p class="col-span-2 text-[10px] text-gray-400 text-center">* 희망일 변경은 관리자에게 문의 바랍니다.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <input type="hidden" id="editRecordId">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">소속 지역</label>
+                                <select id="editRegion" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="목포">목포</option><option value="여수">여수</option><option value="순천">순천</option>
+                                    <option value="나주">나주</option><option value="광양">광양</option><option value="담양">담양</option>
+                                    <option value="곡성">곡성</option><option value="구례">구례</option><option value="고흥">고흥</option>
+                                    <option value="보성">보성</option><option value="화순">화순</option><option value="장흥">장흥</option>
+                                    <option value="강진">강진</option><option value="해남">해남</option><option value="영암">영암</option>
+                                    <option value="무안">무안</option><option value="함평">함평</option><option value="영광">영광</option>
+                                    <option value="장성">장성</option><option value="완도">완도</option><option value="진도">진도</option>
+                                    <option value="신안">신안</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">학교급</label>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <input type="radio" name="editSchoolLevel" id="editLevelEle" value="초" class="hidden radio-box">
+                                        <label for="editLevelEle" class="block w-full text-center p-3 border rounded-lg cursor-pointer font-semibold bg-white">초</label>
+                                    </div>
+                                    <div class="flex-1">
+                                        <input type="radio" name="editSchoolLevel" id="editLevelMid" value="중" class="hidden radio-box">
+                                        <label for="editLevelMid" class="block w-full text-center p-3 border rounded-lg cursor-pointer font-semibold bg-white">중</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div><label class="block text-sm font-semibold text-gray-700 mb-1">소속 학교명</label><input type="text" id="editSchoolName" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <div><label class="block text-sm font-semibold text-gray-700 mb-1">신청자 성함</label><input type="text" id="editUserName" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <div><label class="block text-sm font-semibold text-gray-700 mb-1">연락처</label><input type="text" id="editPhone" oninput="autoHyphen(this)" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <div><label class="block text-sm font-semibold text-gray-700 mb-1">직위</label><input type="text" id="editPosition" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <div><label class="block text-sm font-semibold text-gray-700 mb-1">참석교사 수(명)</label><input type="number" id="editTeacherCount" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <div><label class="block text-sm font-semibold text-gray-700 mb-1">참여 학생수(명)</label><input type="number" id="editStudentCount" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></div>
+                        </div>
+
+                        <div class="mt-6 p-5 border rounded-xl bg-gray-50 space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-3">통학차량 운영 여부</label>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <input type="radio" name="editBusNeeded" id="editBusYes" value="유" class="hidden radio-box" onchange="toggleEditBusType(true)">
+                                        <label for="editBusYes" class="block w-full text-center p-3 border rounded-lg cursor-pointer font-semibold bg-white">유</label>
+                                    </div>
+                                    <div class="flex-1">
+                                        <input type="radio" name="editBusNeeded" id="editBusNo" value="무" class="hidden radio-box" onchange="toggleEditBusType(false)">
+                                        <label for="editBusNo" class="block w-full text-center p-3 border rounded-lg cursor-pointer font-semibold bg-white">무</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="editBusTypeSection" class="hidden border-t pt-4">
+                                <label class="block text-sm font-bold text-gray-700 mb-3">차량 구분</label>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <input type="radio" name="editBusType" id="editBusTypeDirect" value="직영" class="hidden radio-box">
+                                        <label for="editBusTypeDirect" class="block w-full text-center p-3 border rounded-lg cursor-pointer font-semibold bg-white">직영</label>
+                                    </div>
+                                    <div class="flex-1">
+                                        <input type="radio" name="editBusType" id="editBusTypeRent" value="임차" class="hidden radio-box">
+                                        <label for="editBusTypeRent" class="block w-full text-center p-3 border rounded-lg cursor-pointer font-semibold bg-white">임차</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="updateMyApplication()" class="w-full mt-6 bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition shadow-lg">수정 내용 저장하기</button>
+                    </div>
+                </div>
             </div>
 
             <!-- ADMIN PANEL -->
@@ -285,7 +415,8 @@
         let dailyCountMap = {};
         let currentYear, currentMonth;
         let firstChoice = null, secondChoice = null;
-        let currentAdminData = []; // 엑셀용 원본 데이터 저장용
+        let currentAdminData = []; 
+        let searchedApplications = []; // 사용자가 조회한 여러 개의 신청 데이터
 
         window.onload = async () => {
             showLoading(true);
@@ -339,7 +470,6 @@
             document.getElementById('adminPwInput').value = '';
             document.getElementById('adminPwInput').focus();
         }
-
         function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
 
         async function checkAdminPassword() {
@@ -353,6 +483,7 @@
                 document.getElementById('userNav').classList.add('hidden');
                 document.getElementById('step1').classList.add('hidden');
                 document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step4').classList.add('hidden');
                 document.getElementById('adminPanel').classList.remove('hidden');
                 await loadAdminData();
                 renderAdminCalendar();
@@ -383,6 +514,12 @@
 
         function toggleBusType(show) {
             const section = document.getElementById('busTypeSection');
+            if (show) section.classList.remove('hidden');
+            else section.classList.add('hidden');
+        }
+
+        function toggleEditBusType(show) {
+            const section = document.getElementById('editBusTypeSection');
             if (show) section.classList.remove('hidden');
             else section.classList.add('hidden');
         }
@@ -475,6 +612,17 @@
             if (s1) s1.innerHTML = `<div class="p-16 text-center text-red-500 font-bold bg-red-50 border rounded-xl">${m}</div>`; 
         }
 
+        function goToStep1() {
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step4').classList.add('hidden');
+            document.getElementById('step1Tab').classList.add('step-active');
+            document.getElementById('step2Tab').classList.remove('step-active');
+            document.getElementById('step3Tab').classList.remove('step-active');
+            document.getElementById('step4Tab').classList.remove('step-active');
+        }
+
         function goToStep2() {
             if(!firstChoice || !secondChoice) return alert("1순위와 2순위 희망 날짜를 모두 선택해야 합니다.");
             document.getElementById('step1').classList.add('hidden');
@@ -485,11 +633,20 @@
             document.getElementById('confirmDate2').innerText = secondChoice;
         }
 
-        function goToStep1() {
+        function goToStep4() {
+            document.getElementById('step1').classList.add('hidden');
             document.getElementById('step2').classList.add('hidden');
-            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step4').classList.remove('hidden');
+            document.getElementById('step1Tab').classList.remove('step-active');
             document.getElementById('step2Tab').classList.remove('step-active');
-            document.getElementById('step1Tab').classList.add('step-active');
+            document.getElementById('step3Tab').classList.remove('step-active');
+            document.getElementById('step4Tab').classList.add('step-active');
+            
+            document.getElementById('inquiryListSection').classList.add('hidden');
+            document.getElementById('inquiryEditSection').classList.add('hidden');
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchPhone').value = '';
         }
 
         async function submitApplication() {
@@ -531,6 +688,130 @@
                 document.getElementById('step3').classList.remove('hidden');
                 document.getElementById('step2Tab').classList.remove('step-active');
                 document.getElementById('step3Tab').classList.add('step-active');
+            }
+        }
+
+        // 본인 신청 내역 조회 (다중 내역 지원)
+        async function searchMyApplication() {
+            const name = document.getElementById('searchName').value.trim();
+            const phone = document.getElementById('searchPhone').value.trim();
+            if(!name || !phone) return alert("성함과 연락처를 입력해주세요.");
+
+            showLoading(true);
+            const {data, error} = await _supabase.from('applications')
+                .select('*')
+                .eq('user_name', name)
+                .eq('phone', phone)
+                .order('created_at', {ascending: false});
+            
+            showLoading(false);
+            if(error) return alert("조회 중 오류 발생: " + error.message);
+            if(!data || data.length === 0) return alert("입력하신 정보와 일치하는 신청 내역이 없습니다.");
+
+            searchedApplications = data;
+            renderSearchList();
+        }
+
+        // 조회 결과 목록 렌더링
+        function renderSearchList() {
+            document.getElementById('inquiryListSection').classList.remove('hidden');
+            document.getElementById('inquiryEditSection').classList.add('hidden');
+            
+            const tbody = document.getElementById('searchResultListBody');
+            document.getElementById('searchResultCount').innerText = `(총 ${searchedApplications.length}건)`;
+            tbody.innerHTML = '';
+
+            searchedApplications.forEach((app, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <div class="font-bold text-gray-800">${app.school_name}</div>
+                        <div class="text-[11px] text-gray-400">신청일: ${new Date(app.created_at).toLocaleDateString()}</div>
+                    </td>
+                    <td class="p-3">
+                        <div class="text-blue-600 font-bold">${app.first_choice}</div>
+                        <div class="text-[11px] text-gray-400">2순위: ${app.second_choice || '-'}</div>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="selectApplicationForEdit(${idx})" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-blue-700 transition shadow-sm">수정하기</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 목록에서 특정 내역 선택하여 수정 폼 열기
+        function selectApplicationForEdit(index) {
+            const data = searchedApplications[index];
+            if(!data) return;
+
+            document.getElementById('inquiryListSection').classList.add('hidden');
+            document.getElementById('inquiryEditSection').classList.remove('hidden');
+
+            // 데이터 바인딩
+            document.getElementById('editRecordId').value = data.id;
+            document.getElementById('viewDate1').innerText = data.first_choice;
+            document.getElementById('viewDate2').innerText = data.second_choice || '-';
+            document.getElementById('editRegion').value = data.region;
+            document.getElementById('editSchoolName').value = data.school_name;
+            document.getElementById('editUserName').value = data.user_name;
+            document.getElementById('editPhone').value = data.phone;
+            document.getElementById('editPosition').value = data.position;
+            document.getElementById('editTeacherCount').value = data.teacher_count;
+            document.getElementById('editStudentCount').value = data.student_count;
+            
+            if(data.school_level === '초') document.getElementById('editLevelEle').checked = true;
+            else document.getElementById('editLevelMid').checked = true;
+
+            if(data.bus_needed === '유') {
+                document.getElementById('editBusYes').checked = true;
+                toggleEditBusType(true);
+                if(data.bus_type === '직영') document.getElementById('editBusTypeDirect').checked = true;
+                else document.getElementById('editBusTypeRent').checked = true;
+            } else {
+                document.getElementById('editBusNo').checked = true;
+                toggleEditBusType(false);
+            }
+        }
+
+        function backToSearchList() {
+            document.getElementById('inquiryEditSection').classList.add('hidden');
+            document.getElementById('inquiryListSection').classList.remove('hidden');
+        }
+
+        async function updateMyApplication() {
+            const id = document.getElementById('editRecordId').value;
+            const fields = ['editRegion', 'editSchoolName', 'editUserName', 'editPhone', 'editTeacherCount', 'editStudentCount'];
+            if(!fields.every(id => document.getElementById(id).value.trim())) return alert("모든 필수 정보를 입력해주세요.");
+
+            const busNeeded = document.querySelector('input[name="editBusNeeded"]:checked').value;
+            let busType = "해당없음";
+            if(busNeeded === "유") {
+                const st = document.querySelector('input[name="editBusType"]:checked');
+                if(!st) return alert("차량 구분을 선택해주세요.");
+                busType = st.value;
+            }
+
+            showLoading(true);
+            const {error} = await _supabase.from('applications').update({
+                region: document.getElementById('editRegion').value,
+                school_level: document.querySelector('input[name="editSchoolLevel"]:checked').value,
+                school_name: document.getElementById('editSchoolName').value,
+                user_name: document.getElementById('editUserName').value,
+                phone: document.getElementById('editPhone').value,
+                position: document.getElementById('editPosition').value,
+                teacher_count: parseInt(document.getElementById('editTeacherCount').value),
+                student_count: parseInt(document.getElementById('editStudentCount').value),
+                bus_needed: busNeeded,
+                bus_type: busType
+            }).eq('id', id);
+
+            showLoading(false);
+            if(error) alert("수정 실패: " + error.message);
+            else {
+                alert("정보가 성공적으로 수정되었습니다.");
+                location.reload();
             }
         }
 
@@ -608,7 +889,7 @@
                 const div = document.createElement('div');
                 div.className = 'p-1 text-[10px] border rounded text-center cursor-pointer hover:bg-gray-100 transition h-10 flex items-center justify-center';
                 div.innerText = d;
-                if(tempAdminBlockedDates.includes(ds)) div.classList.add('admin-selected-to-block');
+                if(tempAdminBlockedDates.includes(ds)) div.classList.add('admin-blocked');
                 div.onclick = () => toggleTempBlock(ds);
                 body.appendChild(div);
             }
@@ -637,17 +918,13 @@
             finally { showLoading(false); }
         }
 
-        // 엑셀 다운로드: 원본 데이터를 사용하여 각 항목을 독립된 열로 분리
         function exportToExcel() {
             if (!currentAdminData || currentAdminData.length === 0) {
                 alert("다운로드할 데이터가 없습니다.");
                 return;
             }
-            
             const wb = XLSX.utils.book_new();
-            // 요청된 열 순서대로 헤더 정의
             const header = ["일시", "학교급", "지역", "학교", "이름", "연락처", "희망일(1순위)", "희망일(2순위)", "교사", "학생", "차량정보"];
-            
             const rows = currentAdminData.map(app => [
                 app.created_at ? new Date(app.created_at).toLocaleString('ko-KR') : '-',
                 app.school_level || '-',
@@ -661,16 +938,9 @@
                 app.student_count || 0,
                 app.bus_needed === '유' ? `운영(${app.bus_type})` : '미운영'
             ]);
-
             const data = [header, ...rows];
             const ws = XLSX.utils.aoa_to_sheet(data);
-
-            // 숫자가 날짜로 변환되는 것을 방지하기 위해 모든 셀을 텍스트(string) 타입으로 강제 지정
-            Object.keys(ws).forEach(key => {
-                if (key[0] === '!') return; // 메타데이터 제외
-                ws[key].t = 's';
-            });
-
+            Object.keys(ws).forEach(key => { if (key[0] !== '!') ws[key].t = 's'; });
             XLSX.utils.book_append_sheet(wb, ws, "신청현황");
             XLSX.writeFile(wb, `신청현황_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
